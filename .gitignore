@@ -1,11 +1,50 @@
-
-###> symfony/framework-bundle ###
+# Symfony
+/var/
+/vendor/
 /.env.local
 /.env.local.php
 /.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
-/var/
-/vendor/
-###< symfony/framework-bundle ###
+
+# PHPUnit
+/phpunit.xml
+.phpunit.result.cache
+
+# PHPStan
+phpstan.neon.dist
+
+# PHP-CS-Fixer
+/.php-cs-fixer.cache
+/.php-cs-fixer.php
+
+# IDEs and editors
+/.idea/
+/.vscode/
+*.sublime-project
+*.sublime-workspace
+/.atom/
+/.buildpath
+/.project
+/.settings/
+.*.sw*
+
+# Mac OS X
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Docker
+.docker-sync
+docker-compose.override.yml
+
+# Node.js
+/node_modules/
+npm-debug.log
+yarn-error.log
