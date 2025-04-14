@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\User\Service;
 
+use App\Application\User\DTO\UserFilterRequestDTO;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\User\ValueObject\UserId;
@@ -87,6 +88,47 @@ final class UserService
     public function getAllUsers(): array
     {
         return $this->userRepository->findAll();
+    }
+    
+    /**
+     * Get filtered and paginated users
+     * 
+     * @param UserFilterRequestDTO $filterDTO
+     * @return array{0: User[], 1: int} Array containing [results, totalCount]
+     */
+    public function getFilteredUsers(UserFilterRequestDTO $filterDTO): array
+    {
+        $criteria = [];
+        
+        if ($filterDTO->getFirstName()) {
+            $criteria['firstName'] = $filterDTO->getFirstName();
+        }
+        
+        if ($filterDTO->getLastName()) {
+            $criteria['lastName'] = $filterDTO->getLastName();
+        }
+        
+        if ($filterDTO->getEmail()) {
+            $criteria['email'] = $filterDTO->getEmail();
+        }
+        
+        if ($filterDTO->getRole()) {
+            $criteria['role'] = $filterDTO->getRole();
+        }
+        
+        if ($filterDTO->getActive() !== null) {
+            $criteria['active'] = $filterDTO->getActive();
+        }
+        
+        $orderBy = null;
+        if ($filterDTO->getSortBy()) {
+            $orderBy = [$filterDTO->getSortBy() => $filterDTO->getSortDirection()];
+        }
+        
+        $limit = $filterDTO->getLimit();
+        $offset = $filterDTO->getPage() * $filterDTO->getLimit();
+        
+        return $this->userRepository->findByFilters($criteria, $orderBy, $limit, $offset);
     }
     
     public function getUserById(string $id): ?User

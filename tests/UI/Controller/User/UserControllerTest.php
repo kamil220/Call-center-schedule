@@ -28,6 +28,53 @@ class UserControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
     }
     
+    public function testListUsersWithFiltersRequiresAuthentication(): void
+    {
+        // Act
+        $this->client->request('GET', '/api/users?firstName=John&active=true&page=0&limit=10');
+        
+        // Assert
+        $this->assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+    }
+    
+    /**
+     * @group functionalnot
+     */
+    public function testListUsersWithFiltersAndPagination(): void
+    {
+        // Ten test wymaga rzeczywistego środowiska uwierzytelniania
+        $this->markTestSkipped('Ten test wymaga pełnej integracji z JWT, która nie jest dostępna w testach jednostkowych');
+        
+        // Arrange
+        $this->authenticateAsAdmin();
+        
+        // Act - test paginacji i filtrowania
+        $this->client->request('GET', '/api/users?firstName=John&active=true&page=0&limit=10&sortBy=email&sortDirection=ASC');
+        
+        // Assert
+        $this->assertResponseIsSuccessful();
+        $responseData = json_decode($this->client->getResponse()->getContent(), true);
+        
+        // Sprawdzenie struktury odpowiedzi paginowanej
+        $this->assertArrayHasKey('items', $responseData);
+        $this->assertArrayHasKey('total', $responseData);
+        $this->assertArrayHasKey('page', $responseData);
+        $this->assertArrayHasKey('limit', $responseData);
+        $this->assertArrayHasKey('totalPages', $responseData);
+        
+        // Sprawdzenie wartości paginacji
+        $this->assertSame(0, $responseData['page']);
+        $this->assertSame(10, $responseData['limit']);
+        
+        // Sprawdzenie czy filtrowanie działa poprawnie
+        if (count($responseData['items']) > 0) {
+            foreach ($responseData['items'] as $user) {
+                $this->assertStringContainsString('John', $user['firstName']);
+                $this->assertTrue($user['active']);
+            }
+        }
+    }
+    
     public function testCreateUserRequiresAuthentication(): void
     {
         // Act

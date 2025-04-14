@@ -39,6 +39,73 @@ final class DoctrineUserRepository implements UserRepositoryInterface
         return $this->entityManager->getRepository(User::class)->findAll();
     }
     
+    public function findByFilters(
+        array $criteria = [],
+        ?array $orderBy = null,
+        ?int $limit = null,
+        ?int $offset = null
+    ): array {
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('u')
+           ->from(User::class, 'u');
+        
+        // Apply filters for specific fields
+        if (isset($criteria['firstName']) && $criteria['firstName']) {
+            $qb->andWhere('LOWER(u.firstName) LIKE LOWER(:firstName)')
+               ->setParameter('firstName', '%' . $criteria['firstName'] . '%');
+        }
+        
+        if (isset($criteria['lastName']) && $criteria['lastName']) {
+            $qb->andWhere('LOWER(u.lastName) LIKE LOWER(:lastName)')
+               ->setParameter('lastName', '%' . $criteria['lastName'] . '%');
+        }
+        
+        if (isset($criteria['email']) && $criteria['email']) {
+            $qb->andWhere('LOWER(u.email) LIKE LOWER(:email)')
+               ->setParameter('email', '%' . $criteria['email'] . '%');
+        }
+        
+        if (isset($criteria['role']) && $criteria['role']) {
+            $qb->andWhere('JSON_CONTAINS(u.roles, :role) = 1')
+               ->setParameter('role', json_encode($criteria['role']));
+        }
+        
+        if (isset($criteria['active']) && $criteria['active'] !== null) {
+            $qb->andWhere('u.active = :active')
+               ->setParameter('active', $criteria['active']);
+        }
+        
+        // Apply sorting
+        if ($orderBy && count($orderBy) > 0) {
+            foreach ($orderBy as $field => $direction) {
+                if (in_array($field, ['id', 'email', 'firstName', 'lastName', 'active'])) {
+                    $qb->addOrderBy('u.' . $field, $direction);
+                }
+            }
+        } else {
+            $qb->orderBy('u.lastName', 'ASC')
+               ->addOrderBy('u.firstName', 'ASC');
+        }
+        
+        // Clone the query builder to count total results (without limit/offset)
+        $countQb = clone $qb;
+        $countQb->select('COUNT(u.id)');
+        $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
+        
+        // Apply pagination if needed
+        if ($limit !== null) {
+            $qb->setMaxResults($limit);
+            
+            if ($offset !== null) {
+                $qb->setFirstResult($offset);
+            }
+        }
+        
+        $results = $qb->getQuery()->getResult();
+        
+        return [$results, $totalCount];
+    }
+    
     public function remove(User $user): void
     {
         $this->entityManager->remove($user);
