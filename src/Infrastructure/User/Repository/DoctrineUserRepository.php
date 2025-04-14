@@ -50,6 +50,18 @@ final class DoctrineUserRepository implements UserRepositoryInterface
            ->from(User::class, 'u');
         
         // Apply filters for specific fields
+        if (isset($criteria['name']) && $criteria['name']) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    'LOWER(u.firstName) LIKE LOWER(:name)',
+                    'LOWER(u.lastName) LIKE LOWER(:name)',
+                    "LOWER(CONCAT(u.firstName, ' ', u.lastName)) LIKE LOWER(:nameConcat)"
+                )
+            )
+            ->setParameter('name', '%' . $criteria['name'] . '%')
+            ->setParameter('nameConcat', '%' . $criteria['name'] . '%');
+        }
+        
         if (isset($criteria['firstName']) && $criteria['firstName']) {
             $qb->andWhere('LOWER(u.firstName) LIKE LOWER(:firstName)')
                ->setParameter('firstName', '%' . $criteria['firstName'] . '%');

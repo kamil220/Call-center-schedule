@@ -55,6 +55,13 @@ class UserController extends AbstractController
         description: 'Returns a paginated list of users that can be filtered by various criteria'
     )]
     #[OA\Parameter(
+        name: 'name',
+        description: 'Filter by name (searches in first name, last name, or full name - partial match)',
+        in: 'query',
+        required: false,
+        schema: new OA\Schema(type: 'string')
+    )]
+    #[OA\Parameter(
         name: 'firstName',
         description: 'Filter by first name (partial match)',
         in: 'query',

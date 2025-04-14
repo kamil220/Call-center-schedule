@@ -8,6 +8,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 final class UserFilterRequestDTO
 {
+    private ?string $name = null;
     private ?string $firstName = null;
     private ?string $lastName = null;
     private ?string $email = null;
@@ -26,6 +27,10 @@ final class UserFilterRequestDTO
     public static function fromArray(array $data): self
     {
         $dto = new self();
+        
+        if (isset($data['name'])) {
+            $dto->name = $data['name'];
+        }
         
         if (isset($data['firstName'])) {
             $dto->firstName = $data['firstName'];
@@ -64,6 +69,11 @@ final class UserFilterRequestDTO
         }
         
         return $dto;
+    }
+    
+    public function getName(): ?string
+    {
+        return $this->name;
     }
     
     public function getFirstName(): ?string
@@ -114,6 +124,7 @@ final class UserFilterRequestDTO
     public function toArray(): array
     {
         return [
+            'name' => $this->name,
             'firstName' => $this->firstName,
             'lastName' => $this->lastName,
             'email' => $this->email,

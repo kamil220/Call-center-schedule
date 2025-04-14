@@ -100,6 +100,10 @@ final class UserService
     {
         $criteria = [];
         
+        if ($filterDTO->getName()) {
+            $criteria['name'] = $filterDTO->getName();
+        }
+        
         if ($filterDTO->getFirstName()) {
             $criteria['firstName'] = $filterDTO->getFirstName();
         }
