@@ -2,7 +2,7 @@ nelmio_api_doc:
     documentation:
         info:
             title: Call Center Management System API
-            description: API dokumentacja dla systemu zarządzania centrum obsługi klienta
+            description: API documentation for the call center management system
             version: 1.0.0
         security:
             - Bearer: []
@@ -17,7 +17,7 @@ nelmio_api_doc:
                 post:
                     tags:
                         - Authentication
-                    summary: Logowanie do systemu
+                    summary: Login to the system
                     requestBody:
                         content:
                             application/json:
@@ -33,7 +33,7 @@ nelmio_api_doc:
                                         - password
                     responses:
                         '200':
-                            description: Zwraca token JWT
+                            description: Returns JWT token
     areas: # to filter documented areas
         path_patterns:
             - ^/api/(?!doc$) # Exclude /api/doc
