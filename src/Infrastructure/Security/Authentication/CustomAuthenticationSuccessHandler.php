@@ -9,7 +9,6 @@ use Lexik\Bundle\JWTAuthenticationBundle\Security\Http\Authentication\Authentica
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\User\UserInterface;
 
 class CustomAuthenticationSuccessHandler extends AuthenticationSuccessHandler
 {
