@@ -6,6 +6,8 @@ namespace App\UI\Controller\User;
 
 use App\Application\User\Command\CreateUserCommand;
 use App\Application\User\Command\CreateUserHandler;
+use App\Application\User\DTO\CreateUserRequestDTO;
+use App\Application\User\DTO\UserResponseDTO;
 use App\Application\User\Service\UserService;
 use App\Domain\User\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,6 +16,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use App\Domain\User\Event\UserCreatedEvent;
+use App\Domain\User\Event\UserActivatedEvent;
+use App\Domain\User\Event\UserDeactivatedEvent;
 
 #[Route('/api/users', name: 'api_users_')]
 class UserController extends AbstractController
@@ -21,15 +28,21 @@ class UserController extends AbstractController
     private UserService $userService;
     private CreateUserHandler $createUserHandler;
     private SerializerInterface $serializer;
+    private ValidatorInterface $validator;
+    private EventDispatcherInterface $eventDispatcher;
 
     public function __construct(
         UserService $userService,
         CreateUserHandler $createUserHandler,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->userService = $userService;
         $this->createUserHandler = $createUserHandler;
         $this->serializer = $serializer;
+        $this->validator = $validator;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -38,20 +51,12 @@ class UserController extends AbstractController
         $this->denyAccessUnlessGranted(User::ROLE_ADMIN);
         
         $users = $this->userService->getAllUsers();
+        $responseDTOs = array_map(
+            fn(User $user) => UserResponseDTO::fromEntity($user)->toArray(),
+            $users
+        );
         
-        return $this->json([
-            'users' => array_map(function (User $user) {
-                return [
-                    'id' => $user->getId(),
-                    'email' => $user->getEmail(),
-                    'firstName' => $user->getFirstName(),
-                    'lastName' => $user->getLastName(),
-                    'fullName' => $user->getFullName(),
-                    'roles' => $user->getRoles(),
-                    'active' => $user->isActive(),
-                ];
-            }, $users)
-        ]);
+        return $this->json(['users' => $responseDTOs]);
     }
 
     #[Route('/{id}', name: 'get', methods: ['GET'])]
@@ -65,15 +70,9 @@ class UserController extends AbstractController
             return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
         
-        return $this->json([
-            'id' => $user->getId(),
-            'email' => $user->getEmail(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'fullName' => $user->getFullName(),
-            'roles' => $user->getRoles(),
-            'active' => $user->isActive(),
-        ]);
+        $responseDTO = UserResponseDTO::fromEntity($user);
+        
+        return $this->json($responseDTO->toArray());
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
@@ -83,30 +82,35 @@ class UserController extends AbstractController
         
         $data = json_decode($request->getContent(), true);
         
-        if (!isset($data['email'], $data['password'], $data['firstName'], $data['lastName'], $data['roles'])) {
-            return $this->json(['error' => 'Missing required fields'], Response::HTTP_BAD_REQUEST);
+        // Create and validate DTO
+        $requestDTO = CreateUserRequestDTO::fromArray($data);
+        $violations = $this->validator->validate($requestDTO);
+        
+        if (count($violations) > 0) {
+            $errors = [];
+            foreach ($violations as $violation) {
+                $errors[$violation->getPropertyPath()] = $violation->getMessage();
+            }
+            return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
         
         try {
             $command = new CreateUserCommand(
-                $data['email'],
-                $data['password'],
-                $data['firstName'],
-                $data['lastName'],
-                $data['roles']
+                $requestDTO->getEmail(),
+                $requestDTO->getPassword(),
+                $requestDTO->getFirstName(),
+                $requestDTO->getLastName(),
+                $requestDTO->getRoles()
             );
             
             $user = $this->createUserHandler->handle($command);
             
-            return $this->json([
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'fullName' => $user->getFullName(),
-                'roles' => $user->getRoles(),
-                'active' => $user->isActive(),
-            ], Response::HTTP_CREATED);
+            // Dispatch domain event
+            $this->eventDispatcher->dispatch(new UserCreatedEvent($user));
+            
+            $responseDTO = UserResponseDTO::fromEntity($user);
+            
+            return $this->json($responseDTO->toArray(), Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         }
@@ -125,6 +129,9 @@ class UserController extends AbstractController
         
         $this->userService->activateUser($user);
         
+        // Dispatch domain event
+        $this->eventDispatcher->dispatch(new UserActivatedEvent($user));
+        
         return $this->json(['message' => 'User activated successfully']);
     }
 
@@ -140,6 +147,9 @@ class UserController extends AbstractController
         }
         
         $this->userService->deactivateUser($user);
+        
+        // Dispatch domain event
+        $this->eventDispatcher->dispatch(new UserDeactivatedEvent($user));
         
         return $this->json(['message' => 'User deactivated successfully']);
     }
