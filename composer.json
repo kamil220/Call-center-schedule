@@ -8,13 +8,20 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "doctrine/annotations": "^2.0",
+        "doctrine/doctrine-bundle": "^2.14",
+        "doctrine/doctrine-migrations-bundle": "^3.4",
+        "doctrine/orm": "^3.3",
+        "lexik/jwt-authentication-bundle": "^2.21",
         "nelmio/api-doc-bundle": "^5.0",
+        "ramsey/uuid": "^4.7",
         "symfony/asset": "6.4.*",
         "symfony/console": "6.4.*",
         "symfony/dotenv": "6.4.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "6.4.*",
+        "symfony/maker-bundle": "^1.62",
         "symfony/runtime": "6.4.*",
+        "symfony/security-bundle": "6.4.*",
         "symfony/serializer": "6.4.*",
         "symfony/twig-bundle": "6.4.*",
         "symfony/yaml": "6.4.*"
@@ -56,6 +63,29 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
+        ],
+        "test": [
+            "BOOTSTRAP_CLEAR_DATABASE_URL=1 vendor/bin/phpunit"
+        ],
+        "test:domain": [
+            "vendor/bin/phpunit --testsuite=Domain"
+        ],
+        "test:application": [
+            "vendor/bin/phpunit --testsuite=Application"
+        ],
+        "test:infrastructure": [
+            "vendor/bin/phpunit --testsuite=Infrastructure"
+        ],
+        "test:ui": [
+            "vendor/bin/phpunit --testsuite=UI"
+        ],
+        "test:coverage": [
+            "XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html var/coverage"
+        ],
+        "test:clear-db": [
+            "bin/console doctrine:schema:drop --force --env=test",
+            "bin/console doctrine:schema:create --env=test",
+            "bin/console doctrine:fixtures:load --no-interaction --env=test"
         ]
     },
     "conflict": {
@@ -68,9 +98,13 @@
         }
     },
     "require-dev": {
+        "doctrine/doctrine-fixtures-bundle": "^4.1",
         "friendsofphp/php-cs-fixer": "^3.75",
         "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^10.5",
         "rector/rector": "^2.0",
+        "symfony/browser-kit": "6.4.*",
+        "symfony/css-selector": "6.4.*",
         "symfony/phpunit-bridge": "^7.2"
     }
 }

@@ -1,6 +1,7 @@
 # Symfony
 /var/
 /vendor/
+.env
 /.env.local
 /.env.local.php
 /.env.*.local
@@ -48,3 +49,12 @@ docker-compose.override.yml
 /node_modules/
 npm-debug.log
 yarn-error.log
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###

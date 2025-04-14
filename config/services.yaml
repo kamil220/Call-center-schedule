@@ -16,9 +16,21 @@ services:
     App\:
         resource: '../src/'
         exclude:
-            - '../src/DependencyInjection/'
-            - '../src/Entity/'
             - '../src/Kernel.php'
+            - '../src/Domain/*/Entity/'
+            - '../src/Domain/*/ValueObject/'
+            - '../src/Domain/*/Exception/'
+            - '../src/Application/*/DTO/'
+            - '../src/Application/*/Command/*/Command.php'
+            - '../src/Application/*/Query/*/Query.php'
+
+    # Command handlers should be services
+    App\Application\User\Command\CreateUserHandler:
+        autowire: true
+
+    # Domain repositories (interfaces)
+    App\Domain\User\Repository\UserRepositoryInterface:
+        class: App\Infrastructure\User\Repository\DoctrineUserRepository
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

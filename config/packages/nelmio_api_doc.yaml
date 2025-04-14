@@ -1,18 +1,40 @@
 nelmio_api_doc:
     documentation:
         info:
-            title: API Documentation
-            description: API documentation for the application
+            title: Call Center Management System API
+            description: API dokumentacja dla systemu zarządzania centrum obsługi klienta
             version: 1.0.0
+        security:
+            - Bearer: []
         components:
             securitySchemes:
                 Bearer:
                     type: http
                     scheme: bearer
                     bearerFormat: JWT
-        security:
-            - Bearer: []
-    areas:
-        default:
-            path_patterns:
-                - ^/api(?!/doc$) # Accepts routes under /api except /api/doc 
+        paths:
+            /api/auth/login:
+                post:
+                    tags:
+                        - Authentication
+                    summary: Logowanie do systemu
+                    requestBody:
+                        content:
+                            application/json:
+                                schema:
+                                    type: object
+                                    properties:
+                                        email:
+                                            type: string
+                                        password:
+                                            type: string
+                                    required:
+                                        - email
+                                        - password
+                    responses:
+                        '200':
+                            description: Zwraca token JWT
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/api/(?!doc$) # Exclude /api/doc
+            - ^/api/users 
