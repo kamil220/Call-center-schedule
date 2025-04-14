@@ -1,0 +1,129 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Rules for Call Center Management System
+
+## Architecture
+
+- Use Domain-Driven Design (DDD) architecture with clear bounded contexts
+- Structure code in layers: Domain, Application, Infrastructure, UI/API
+- Define explicit domain models for core concepts: Employee, Schedule, Shift, Role
+- Use PHP 8.2
+
+## Domain Layer Guidelines
+
+- Place all business logic in domain models and services
+- Implement value objects for immutable concepts (WorkHour, ShiftType)
+- Use rich domain models instead of anemic models
+- Define domain events for important state changes (ShiftAssigned, SchedulePublished)
+
+## Coding Standards
+
+- Follow SOLID principles:
+  - Single Responsibility: Each class has one job
+  - Open/Closed: Extend behavior without modifying code
+  - Liskov Substitution: Derived classes must substitute base classes
+  - Interface Segregation: Specific interfaces over general ones
+  - Dependency Inversion: Depend on abstractions, not implementations
+- Apply KISS: Prefer simple solutions over complex ones
+- Follow DRY: Extract common functionality into reusable components
+- Use type hints and docblocks for all methods
+
+## Project Structure
+
+- `/src/Domain/` - Domain models, interfaces, events, exceptions
+- `/src/Application/` - Use cases, commands, queries, DTOs
+- `/src/Infrastructure/` - Repositories, external services, database
+- `/src/UI/` - API controllers, request/response objects
+
+## Database Guidelines
+
+- Use Doctrine ORM with MySQL
+- Follow database naming conventions (snake_case for tables, columns)
+- Create migrations for all schema changes
+- Implement repository interfaces in domain, implementations in infrastructure
+- Define appropriate indexes for performance optimization
+
+## API Design
+
+- Follow REST principles
+- Use JSON:API specification for consistent responses
+- Implement proper HTTP status codes
+- Version the API (v1, v2)
+- Include appropriate validation for all inputs
+
+## Testing
+
+- Write unit tests for domain logic
+- Create integration tests for repositories and services
+- Implement API tests for endpoints
+- Maintain at least 80% code coverage
+  
+## Security
+
+- Implement proper authentication/authorization
+- Use Symfony security components
+- Apply CSRF protection where needed
+- Sanitize all user inputs 
+
+## Error Handling
+
+- Create custom domain exceptions for business rule violations (e.g., `ShiftOverlapException`, `MaxWorkHoursExceededException`)
+- Implement global exception handler for consistent API error responses
+- Structure error responses with error code, message, and details
+- Use appropriate HTTP status codes for different error types
+- Log all exceptions with context information
+- Handle validation errors separately from application errors
+
+## Performance
+
+- Implement Redis caching for frequently accessed data (schedules, employee lists)
+- Use database indexing strategically for query optimization
+- Implement pagination for all collection endpoints
+- Use lazy loading for related entities
+- Consider denormalization for complex reporting queries
+- Implement database query optimization for large datasets
+- Use asynchronous processing for long-running operations (schedule generation)
+
+## API Documentation
+
+- Implement Swagger/OpenAPI for automatic API documentation
+- Document all endpoints with descriptions, parameters, and response schemas
+- Include request/response examples for each endpoint
+- Version documentation along with API
+- Provide authentication information in documentation
+- Document error codes and their meaning 
+
+## Type System and Data Transfer
+
+- Enable strict typing with `declare(strict_types=1)` in all files
+- Use type hints for all method parameters and return types
+- Prefer scalar type hints (string, int, bool) over PHPDoc annotations alone
+- Use nullable types (`?string`) instead of union types with null (`string|null`)
+- Create interfaces for all services and repositories
+- Define contracts through interfaces before implementation
+- Follow interface segregation principle strictly (small, focused interfaces)
+- Use DTOs for all API requests and responses
+- Keep DTOs immutable with private properties and getters
+- Implement separate DTOs for input and output when they differ
+- Use data transformers to convert between domain objects and DTOs
+- Don't expose domain objects directly through the API
+- Implement input validation at DTO creation level
+- Use value objects for complex domain concepts (e.g., `EmployeeId`, `WorkingHours`) 
+
+## Documentation and Naming Conventions
+
+- Use English exclusively throughout the codebase (comments, variables, methods, classes)
+- Use PHPDoc blocks for all classes, methods, and properties
+- Avoid inline comments within method bodies unless absolutely necessary for complex logic
+- Document "why" rather than "what" in any required inline comments
+- Follow PSR-12 coding style guidelines
+- Name classes clearly with full, descriptive nouns (e.g., `EmployeeScheduleService` not `EmpSchedSrv`)
+- Use verbs for method names that indicate action (e.g., `assignShift()`, `calculateWorkHours()`)
+- Prefix boolean methods with "is", "has", or "can" (e.g., `isEligibleForShift()`)
+- Prefix getters with "get" and setters with "set"
+- Use meaningful, domain-specific naming that aligns with ubiquitous language
+- Keep file names matching the class names exactly
+- Define and maintain a domain glossary for consistent terminology across the project 
