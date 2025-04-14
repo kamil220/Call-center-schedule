@@ -32,5 +32,9 @@ services:
     App\Domain\User\Repository\UserRepositoryInterface:
         class: App\Infrastructure\User\Repository\DoctrineUserRepository
 
+    # Authentication Success Handler - registered directly in security.yaml
+    App\Infrastructure\Security\Authentication\CustomAuthenticationSuccessHandler:
+        autowire: true
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

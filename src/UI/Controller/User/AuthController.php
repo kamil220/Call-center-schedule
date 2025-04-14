@@ -6,28 +6,37 @@ namespace App\UI\Controller\User;
 
 use App\Application\User\Service\UserService;
 use App\Domain\User\Entity\User;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
 {
     private UserService $userService;
     private UserPasswordHasherInterface $passwordHasher;
+    private JWTTokenManagerInterface $jwtManager;
 
     public function __construct(
         UserService $userService,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        JWTTokenManagerInterface $jwtManager
     ) {
         $this->userService = $userService;
         $this->passwordHasher = $passwordHasher;
+        $this->jwtManager = $jwtManager;
     }
 
+    /**
+     * This method won't get called due to Symfony security configuration
+     * handling the /api/auth/login endpoint before it reaches the controller.
+     * The actual authentication success response is handled by
+     * CustomAuthenticationSuccessHandler.
+     */
     #[Route('/login', name: 'login', methods: ['POST'])]
     public function login(Request $request): JsonResponse
     {
@@ -44,11 +53,19 @@ class AuthController extends AbstractController
             ], Response::HTTP_UNAUTHORIZED);
         }
         
+        // Generate token manually if needed
+        $token = $this->jwtManager->create($user);
+        
         return $this->json([
+            'token' => $token,
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getUserIdentifier(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'fullName' => $user->getFullName(),
                 'roles' => $user->getRoles(),
+                'active' => $user->isActive(),
             ],
         ]);
     }
