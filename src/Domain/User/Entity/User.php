@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\User\Entity;
 
 use App\Domain\User\Exception\InvalidRoleException;
+use App\Domain\User\Exception\InvalidManagerRoleException;
 use App\Domain\User\ValueObject\UserId;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -24,6 +25,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         self::ROLE_PLANNER,
         self::ROLE_TEAM_MANAGER,
         self::ROLE_AGENT,
+    ];
+    
+    public const MANAGER_ROLES = [
+        self::ROLE_ADMIN,
+        self::ROLE_PLANNER,
+        self::ROLE_TEAM_MANAGER,
     ];
 
     #[ORM\Id]
@@ -47,6 +54,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: 'boolean')]
     private bool $active = true;
+    
+    #[ORM\Column(type: 'date', nullable: true)]
+    private ?\DateTimeInterface $hireDate = null;
+    
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'manager_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    private ?User $manager = null;
+    
+    #[ORM\OneToMany(mappedBy: 'manager', targetEntity: User::class)]
+    private iterable $subordinates;
 
     public function __construct(
         UserId $id,
@@ -58,6 +75,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->email = $email;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
+        $this->subordinates = [];
     }
 
     public function getId(): string
@@ -180,5 +198,64 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function hasRole(string $role): bool
     {
         return in_array($role, $this->roles, true);
+    }
+    
+    public function getHireDate(): ?\DateTimeInterface
+    {
+        return $this->hireDate;
+    }
+    
+    public function setHireDate(?\DateTimeInterface $hireDate): self
+    {
+        $this->hireDate = $hireDate;
+        
+        return $this;
+    }
+    
+    public function getManager(): ?self
+    {
+        return $this->manager;
+    }
+    
+    public function setManager(?self $manager): self
+    {
+        if ($manager !== null && !$this->isValidManager($manager)) {
+            throw new InvalidManagerRoleException();
+        }
+        
+        $this->manager = $manager;
+        
+        return $this;
+    }
+    
+    public function getSubordinates(): iterable
+    {
+        return $this->subordinates;
+    }
+    
+    public function isValidManager(?self $manager): bool
+    {
+        if ($manager === null) {
+            return true;
+        }
+        
+        foreach (self::MANAGER_ROLES as $role) {
+            if ($manager->hasRole($role)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    public function canBeManager(): bool
+    {
+        foreach (self::MANAGER_ROLES as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 } 

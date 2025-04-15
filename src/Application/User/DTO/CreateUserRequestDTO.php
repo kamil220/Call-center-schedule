@@ -28,19 +28,29 @@ final class CreateUserRequestDTO
         new Assert\Choice(choices: User::VALID_ROLES)
     ])]
     private array $roles;
+    
+    #[Assert\Date]
+    private ?string $hireDate = null;
+    
+    #[Assert\Uuid(strict: false)]
+    private ?string $managerId = null;
 
     public function __construct(
         string $email,
         string $password,
         string $firstName,
         string $lastName,
-        array $roles
+        array $roles,
+        ?string $hireDate = null,
+        ?string $managerId = null
     ) {
         $this->email = $email;
         $this->password = $password;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
         $this->roles = $roles;
+        $this->hireDate = $hireDate;
+        $this->managerId = $managerId;
     }
 
     public static function fromArray(array $data): self
@@ -50,7 +60,9 @@ final class CreateUserRequestDTO
             $data['password'] ?? '',
             $data['firstName'] ?? '',
             $data['lastName'] ?? '',
-            $data['roles'] ?? []
+            $data['roles'] ?? [],
+            $data['hireDate'] ?? null,
+            $data['managerId'] ?? null
         );
     }
 
@@ -77,5 +89,15 @@ final class CreateUserRequestDTO
     public function getRoles(): array
     {
         return $this->roles;
+    }
+    
+    public function getHireDate(): ?string
+    {
+        return $this->hireDate;
+    }
+    
+    public function getManagerId(): ?string
+    {
+        return $this->managerId;
     }
 } 

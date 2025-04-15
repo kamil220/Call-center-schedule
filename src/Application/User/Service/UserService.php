@@ -9,18 +9,24 @@ use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\User\ValueObject\UserId;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use App\Domain\User\Event\UserCreatedEvent;
+use App\Domain\User\Event\UserRoleChangedEvent;
 
 final class UserService
 {
     private UserRepositoryInterface $userRepository;
     private UserPasswordHasherInterface $passwordHasher;
+    private EventDispatcherInterface $eventDispatcher;
     
     public function __construct(
         UserRepositoryInterface $userRepository,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->userRepository = $userRepository;
         $this->passwordHasher = $passwordHasher;
+        $this->eventDispatcher = $eventDispatcher;
     }
     
     public function createUser(
@@ -28,7 +34,9 @@ final class UserService
         string $plainPassword,
         string $firstName,
         string $lastName,
-        array $roles
+        array $roles,
+        ?\DateTimeInterface $hireDate = null,
+        ?User $manager = null
     ): User {
         // Check if a user with this email already exists
         $existingUser = $this->getUserByEmail($email);
@@ -50,7 +58,18 @@ final class UserService
             $user->addRole($role);
         }
         
+        if ($hireDate !== null) {
+            $user->setHireDate($hireDate);
+        }
+        
+        if ($manager !== null) {
+            $user->setManager($manager);
+        }
+        
         $this->userRepository->save($user);
+        
+        // Dispatch domain event
+        $this->eventDispatcher->dispatch(new UserCreatedEvent($user));
         
         return $user;
     }
@@ -60,7 +79,9 @@ final class UserService
         string $email,
         string $firstName,
         string $lastName,
-        array $roles
+        array $roles,
+        ?\DateTimeInterface $hireDate = null,
+        ?User $manager = null
     ): User {
         // Check if the email is being changed and if a user with the new email already exists
         if ($user->getEmail() !== $email) {
@@ -75,6 +96,9 @@ final class UserService
             ->setFirstName($firstName)
             ->setLastName($lastName);
         
+        // Get current roles before updating
+        $oldRoles = $user->getRoles();
+        
         // Reset roles and add new ones
         foreach (User::VALID_ROLES as $role) {
             if ($user->hasRole($role)) {
@@ -86,7 +110,21 @@ final class UserService
             $user->addRole($role);
         }
         
+        // Set hire date (may be null, which is allowed)
+        $user->setHireDate($hireDate);
+        
+        // Only set manager if the user doesn't become a self-manager
+        if ($manager !== null && $manager->getId() !== $user->getId()) {
+            $user->setManager($manager);
+        }
+        
         $this->userRepository->save($user);
+        
+        // Check if roles changed and dispatch event if they did
+        $newRoles = $user->getRoles();
+        if (array_diff($oldRoles, $newRoles) || array_diff($newRoles, $oldRoles)) {
+            $this->eventDispatcher->dispatch(new UserRoleChangedEvent($user, $oldRoles, $newRoles));
+        }
         
         return $user;
     }

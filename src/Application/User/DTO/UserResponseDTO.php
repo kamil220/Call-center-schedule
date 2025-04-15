@@ -15,6 +15,8 @@ final class UserResponseDTO
     private string $fullName;
     private array $roles;
     private bool $active;
+    private ?string $hireDate;
+    private ?array $manager;
 
     public function __construct(
         string $id,
@@ -23,7 +25,9 @@ final class UserResponseDTO
         string $lastName,
         string $fullName,
         array $roles,
-        bool $active
+        bool $active,
+        ?string $hireDate,
+        ?array $manager
     ) {
         $this->id = $id;
         $this->email = $email;
@@ -32,10 +36,24 @@ final class UserResponseDTO
         $this->fullName = $fullName;
         $this->roles = $roles;
         $this->active = $active;
+        $this->hireDate = $hireDate;
+        $this->manager = $manager;
     }
 
     public static function fromEntity(User $user): self
     {
+        $managerData = null;
+        $manager = $user->getManager();
+        if ($manager !== null) {
+            $managerData = [
+                'id' => $manager->getId(),
+                'fullName' => $manager->getFullName(),
+                'email' => $manager->getEmail(),
+            ];
+        }
+        
+        $hireDate = $user->getHireDate() ? $user->getHireDate()->format('Y-m-d') : null;
+        
         return new self(
             $user->getId(),
             $user->getEmail(),
@@ -43,7 +61,9 @@ final class UserResponseDTO
             $user->getLastName(),
             $user->getFullName(),
             $user->getRoles(),
-            $user->isActive()
+            $user->isActive(),
+            $hireDate,
+            $managerData
         );
     }
 
@@ -82,6 +102,16 @@ final class UserResponseDTO
         return $this->active;
     }
 
+    public function getHireDate(): ?string
+    {
+        return $this->hireDate;
+    }
+
+    public function getManager(): ?array
+    {
+        return $this->manager;
+    }
+
     public function toArray(): array
     {
         return [
@@ -92,6 +122,8 @@ final class UserResponseDTO
             'fullName' => $this->fullName,
             'roles' => $this->roles,
             'active' => $this->active,
+            'hireDate' => $this->hireDate,
+            'manager' => $this->manager,
         ];
     }
 } 

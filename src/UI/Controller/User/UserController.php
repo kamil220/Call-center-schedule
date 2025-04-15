@@ -137,7 +137,18 @@ class UserController extends AbstractController
                         new OA\Property(property: 'lastName', type: 'string'),
                         new OA\Property(property: 'fullName', type: 'string'),
                         new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
-                        new OA\Property(property: 'active', type: 'boolean')
+                        new OA\Property(property: 'active', type: 'boolean'),
+                        new OA\Property(property: 'hireDate', type: 'string', format: 'date', nullable: true),
+                        new OA\Property(
+                            property: 'manager', 
+                            type: 'object', 
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'id', type: 'string'),
+                                new OA\Property(property: 'fullName', type: 'string'),
+                                new OA\Property(property: 'email', type: 'string')
+                            ]
+                        )
                     ],
                     type: 'object'
                 )),
@@ -215,7 +226,18 @@ class UserController extends AbstractController
                 new OA\Property(property: 'lastName', type: 'string'),
                 new OA\Property(property: 'fullName', type: 'string'),
                 new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
-                new OA\Property(property: 'active', type: 'boolean')
+                new OA\Property(property: 'active', type: 'boolean'),
+                new OA\Property(property: 'hireDate', type: 'string', format: 'date', nullable: true),
+                new OA\Property(
+                    property: 'manager', 
+                    type: 'object', 
+                    nullable: true,
+                    properties: [
+                        new OA\Property(property: 'id', type: 'string'),
+                        new OA\Property(property: 'fullName', type: 'string'),
+                        new OA\Property(property: 'email', type: 'string')
+                    ]
+                )
             ]
         )
     )]
@@ -260,7 +282,9 @@ class UserController extends AbstractController
                     property: 'roles', 
                     type: 'array', 
                     items: new OA\Items(type: 'string', enum: User::VALID_ROLES)
-                )
+                ),
+                new OA\Property(property: 'hireDate', type: 'string', format: 'date', example: '2023-01-15'),
+                new OA\Property(property: 'managerId', type: 'string', format: 'uuid')
             ],
             required: ['email', 'password', 'firstName', 'lastName', 'roles']
         )
@@ -276,7 +300,18 @@ class UserController extends AbstractController
                 new OA\Property(property: 'lastName', type: 'string'),
                 new OA\Property(property: 'fullName', type: 'string'),
                 new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
-                new OA\Property(property: 'active', type: 'boolean')
+                new OA\Property(property: 'active', type: 'boolean'),
+                new OA\Property(property: 'hireDate', type: 'string', format: 'date', nullable: true),
+                new OA\Property(
+                    property: 'manager', 
+                    type: 'object', 
+                    nullable: true,
+                    properties: [
+                        new OA\Property(property: 'id', type: 'string'),
+                        new OA\Property(property: 'fullName', type: 'string'),
+                        new OA\Property(property: 'email', type: 'string')
+                    ]
+                )
             ]
         )
     )]
@@ -312,7 +347,9 @@ class UserController extends AbstractController
                 $requestDTO->getPassword(),
                 $requestDTO->getFirstName(),
                 $requestDTO->getLastName(),
-                $requestDTO->getRoles()
+                $requestDTO->getRoles(),
+                $requestDTO->getHireDate(),
+                $requestDTO->getManagerId()
             );
             
             $user = $this->createUserHandler->handle($command);
