@@ -30,6 +30,12 @@ final class UserService
         string $lastName,
         array $roles
     ): User {
+        // Check if a user with this email already exists
+        $existingUser = $this->getUserByEmail($email);
+        if ($existingUser !== null) {
+            throw new \InvalidArgumentException(sprintf('User with email "%s" already exists', $email));
+        }
+        
         $user = new User(
             UserId::generate(),
             $email,
@@ -56,6 +62,14 @@ final class UserService
         string $lastName,
         array $roles
     ): User {
+        // Check if the email is being changed and if a user with the new email already exists
+        if ($user->getEmail() !== $email) {
+            $existingUser = $this->getUserByEmail($email);
+            if ($existingUser !== null && $existingUser->getId() !== $user->getId()) {
+                throw new \InvalidArgumentException(sprintf('User with email "%s" already exists', $email));
+            }
+        }
+        
         $user
             ->setEmail($email)
             ->setFirstName($firstName)
