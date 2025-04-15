@@ -6,7 +6,7 @@ namespace App\Domain\User\Event;
 
 use App\Domain\User\Entity\User;
 
-final class UserRoleChangedEvent
+class UserRoleChangedEvent
 {
     private User $user;
     private array $oldRoles;

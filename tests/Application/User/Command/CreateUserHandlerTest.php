@@ -12,6 +12,7 @@ use App\Domain\User\Repository\UserRepositoryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class CreateUserHandlerTest extends TestCase
 {
@@ -27,15 +28,22 @@ class CreateUserHandlerTest extends TestCase
      */
     private $passwordHasherMock;
     
+    /**
+     * @var EventDispatcherInterface&MockObject
+     */
+    private $eventDispatcherMock;
+    
     protected function setUp(): void
     {
         $this->userRepositoryMock = $this->createMock(UserRepositoryInterface::class);
         $this->passwordHasherMock = $this->createMock(UserPasswordHasherInterface::class);
+        $this->eventDispatcherMock = $this->createMock(EventDispatcherInterface::class);
         
         // Używamy rzeczywistej instancji UserService z mockami zależności
         $userService = new UserService(
             $this->userRepositoryMock,
-            $this->passwordHasherMock
+            $this->passwordHasherMock,
+            $this->eventDispatcherMock
         );
         
         $this->handler = new CreateUserHandler($userService);

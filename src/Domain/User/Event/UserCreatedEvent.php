@@ -6,7 +6,7 @@ namespace App\Domain\User\Event;
 
 use App\Domain\User\Entity\User;
 
-final class UserCreatedEvent
+class UserCreatedEvent
 {
     private User $user;
     private \DateTimeImmutable $occurredOn;
