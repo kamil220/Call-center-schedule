@@ -78,8 +78,8 @@ final class DoctrineUserRepository implements UserRepositoryInterface
         }
         
         if (isset($criteria['role']) && $criteria['role']) {
-            $qb->andWhere('JSON_CONTAINS(u.roles, :role) = 1')
-               ->setParameter('role', json_encode($criteria['role']));
+            $qb->andWhere('u.roles LIKE :role')
+               ->setParameter('role', '%"' . $criteria['role'] . '"%');
         }
         
         if (isset($criteria['active']) && $criteria['active'] !== null) {
