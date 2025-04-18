@@ -8,6 +8,10 @@ doctrine:
 
         profiling_collect_backtrace: '%kernel.debug%'
         use_savepoints: true
+        types:
+            json: Doctrine\DBAL\Types\JsonType
+        mapping_types:
+            json: json
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true
@@ -22,6 +26,9 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Domain'
                 prefix: 'App\Domain'
                 alias: App
+        dql:
+            string_functions:
+                JSON_CONTAINS: Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonContains
 
 when@test:
     doctrine:

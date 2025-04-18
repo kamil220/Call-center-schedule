@@ -12,7 +12,11 @@ final class UserFilterRequestDTO
     private ?string $firstName = null;
     private ?string $lastName = null;
     private ?string $email = null;
-    private ?string $role = null;
+    /**
+     * @var string[]|null
+     * @Assert\Choice(choices=User::VALID_ROLES, multiple=true, message="Invalid role selected.")
+     */
+    private ?array $roles = null;
     private ?bool $active = null;
     
     #[Assert\PositiveOrZero]
@@ -44,8 +48,13 @@ final class UserFilterRequestDTO
             $dto->email = $data['email'];
         }
         
-        if (isset($data['role'])) {
-            $dto->role = $data['role'];
+        if (isset($data['roles']) && is_array($data['roles'])) {
+            $dto->roles = array_filter($data['roles'], fn($role) => is_string($role) && !empty($role));
+            if (empty($dto->roles)) {
+                $dto->roles = null;
+            }
+        } elseif (isset($data['roles']) && is_string($data['roles'])) {
+            $dto->roles = [$data['roles']];
         }
         
         if (isset($data['active'])) {
@@ -91,9 +100,9 @@ final class UserFilterRequestDTO
         return $this->email;
     }
     
-    public function getRole(): ?string
+    public function getRoles(): ?array
     {
-        return $this->role;
+        return $this->roles;
     }
     
     public function getActive(): ?bool
@@ -128,7 +137,7 @@ final class UserFilterRequestDTO
             'firstName' => $this->firstName,
             'lastName' => $this->lastName,
             'email' => $this->email,
-            'role' => $this->role,
+            'roles' => $this->roles,
             'active' => $this->active,
             'page' => $this->page,
             'limit' => $this->limit,

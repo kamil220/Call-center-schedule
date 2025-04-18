@@ -168,8 +168,8 @@ final class UserService
             $criteria['email'] = $filterDTO->getEmail();
         }
         
-        if ($filterDTO->getRole()) {
-            $criteria['role'] = $filterDTO->getRole();
+        if ($filterDTO->getRoles()) {
+            $criteria['roles'] = $filterDTO->getRoles();
         }
         
         if ($filterDTO->getActive() !== null) {

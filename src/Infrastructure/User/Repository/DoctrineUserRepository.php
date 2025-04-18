@@ -77,9 +77,24 @@ final class DoctrineUserRepository implements UserRepositoryInterface
                ->setParameter('email', '%' . $criteria['email'] . '%');
         }
         
+        // Handle single role (for backward compatibility)
         if (isset($criteria['role']) && $criteria['role']) {
-            $qb->andWhere('u.roles LIKE :role')
-               ->setParameter('role', '%"' . $criteria['role'] . '"%');
+            $qb->andWhere('JSON_CONTAINS(u.roles, :role) = 1')
+               ->setParameter('role', json_encode($criteria['role']));
+        }
+        
+        // New role filtering block using JSON_CONTAINS
+        if (isset($criteria['roles']) && !empty($criteria['roles']) && is_array($criteria['roles'])) {
+            $roleConditions = [];
+            
+            foreach ($criteria['roles'] as $index => $role) {
+                $roleConditions[] = 'JSON_CONTAINS(u.roles, :role_' . $index . ') = 1';
+                $qb->setParameter('role_' . $index, json_encode($role));
+            }
+            
+            if (!empty($roleConditions)) {
+                $qb->andWhere(implode(' OR ', $roleConditions));
+            }
         }
         
         if (isset($criteria['active']) && $criteria['active'] !== null) {
@@ -101,7 +116,27 @@ final class DoctrineUserRepository implements UserRepositoryInterface
         
         // Clone the query builder to count total results (without limit/offset)
         $countQb = clone $qb;
-        $countQb->select('COUNT(u.id)');
+        $countQb->resetDQLPart('orderBy');
+        $countQb->select('COUNT(DISTINCT u.id)');
+        
+        // Copy parameters from $qb to $countQb
+        foreach ($qb->getParameters() as $parameter) {
+             if (!$countQb->getParameter($parameter->getName())) {
+                  $countQb->setParameter($parameter->getName(), $parameter->getValue(), $parameter->getType());
+             }
+        }
+        // Ensure all role parameters are in the counting query if they were added
+        if (isset($roleParams)) {
+            foreach ($roleParams as $name => $value) {
+                if (!$countQb->getParameter($name)) {
+                     $countQb->setParameter($name, $value);
+                }
+            }
+        }
+        if (isset($criteria['email']) && $criteria['email']) {
+            if (!$countQb->getParameter('email')) { $countQb->setParameter('email', '%' . $criteria['email'] . '%'); }
+        }
+        
         $totalCount = (int) $countQb->getQuery()->getSingleScalarResult();
         
         // Apply pagination if needed
@@ -113,7 +148,14 @@ final class DoctrineUserRepository implements UserRepositoryInterface
             }
         }
         
-        $results = $qb->getQuery()->getResult();
+        $query = $qb->getQuery();
+        $parameters = $query->getParameters();
+        $paramStr = '';
+        foreach ($parameters as $param) {
+            $paramStr .= $param->getName() . '=' . $param->getValue() . ', ';
+        }
+
+        $results = $query->getResult();
         
         return [$results, $totalCount];
     }

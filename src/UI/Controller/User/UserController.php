@@ -83,11 +83,14 @@ class UserController extends AbstractController
         schema: new OA\Schema(type: 'string')
     )]
     #[OA\Parameter(
-        name: 'role',
-        description: 'Filter by role (exact match)',
+        name: 'roles[]',
+        description: 'Filter by one or more roles (e.g., roles[]=ADMIN&roles[]=USER)',
         in: 'query',
         required: false,
-        schema: new OA\Schema(type: 'string', enum: User::VALID_ROLES)
+        schema: new OA\Schema(
+            type: 'array',
+            items: new OA\Items(type: 'string', enum: User::VALID_ROLES)
+        )
     )]
     #[OA\Parameter(
         name: 'active',
