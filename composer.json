@@ -13,6 +13,7 @@
         "doctrine/orm": "^3.3",
         "lexik/jwt-authentication-bundle": "^2.21",
         "nelmio/api-doc-bundle": "^5.0",
+        "nesbot/carbon": "^3.9",
         "ramsey/uuid": "^4.7",
         "scienta/doctrine-json-functions": "^6.3",
         "symfony/asset": "6.4.*",
@@ -27,6 +28,7 @@
         "symfony/security-bundle": "6.4.*",
         "symfony/serializer": "6.4.*",
         "symfony/twig-bundle": "6.4.*",
+        "symfony/uid": "6.4.*",
         "symfony/validator": "6.4.*",
         "symfony/yaml": "6.4.*"
     },

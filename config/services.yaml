@@ -16,10 +16,14 @@ services:
     App\:
         resource: '../src/'
         exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
             - '../src/Kernel.php'
             - '../src/Domain/*/Entity/'
             - '../src/Domain/*/ValueObject/'
             - '../src/Domain/*/Exception/'
+            - '../src/Domain/*/Repository/'
+            - '../src/Domain/*/Service/*/Interface.php'
             - '../src/Application/*/DTO/'
             - '../src/Application/*/Command/*/Command.php'
             - '../src/Application/*/Query/*/Query.php'
@@ -35,6 +39,10 @@ services:
     # Authentication Success Handler - registered directly in security.yaml
     App\Infrastructure\Security\Authentication\CustomAuthenticationSuccessHandler:
         autowire: true
+
+    # Holiday Provider
+    App\Domain\Calendar\Service\HolidayProvider\HolidayProviderInterface:
+        class: App\Domain\Calendar\Service\HolidayProvider\PolishHolidayProvider
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
