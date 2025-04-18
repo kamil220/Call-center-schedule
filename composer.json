@@ -15,6 +15,7 @@
         "nelmio/api-doc-bundle": "^5.0",
         "nesbot/carbon": "^3.9",
         "ramsey/uuid": "^4.7",
+        "ramsey/uuid-doctrine": "^2.1",
         "scienta/doctrine-json-functions": "^6.3",
         "symfony/asset": "6.4.*",
         "symfony/console": "6.4.*",

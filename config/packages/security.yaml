@@ -8,6 +8,12 @@ security:
             entity:
                 class: App\Domain\User\Entity\User
                 property: email
+
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_AGENT, ROLE_PLANNER, ROLE_TEAM_MANAGER]
+        ROLE_TEAM_MANAGER: [ROLE_AGENT]
+        ROLE_PLANNER: [ROLE_AGENT, ROLE_TEAM_MANAGER]
+
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/

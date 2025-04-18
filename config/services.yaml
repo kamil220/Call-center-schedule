@@ -44,5 +44,31 @@ services:
     App\Domain\Calendar\Service\HolidayProvider\HolidayProviderInterface:
         class: App\Domain\Calendar\Service\HolidayProvider\PolishHolidayProvider
 
+    # Availability Repository
+    App\Domain\WorkSchedule\Repository\AvailabilityRepository:
+        arguments:
+            $registry: '@doctrine'
+        tags: ['doctrine.repository_service']
+
+    App\Domain\WorkSchedule\Repository\AvailabilityRepositoryInterface:
+        alias: App\Domain\WorkSchedule\Repository\AvailabilityRepository
+
+    # Availability Strategies
+    App\Domain\WorkSchedule\Service\AvailabilityStrategy\B2BContractStrategy:
+        tags: ['app.availability_strategy']
+
+    App\Domain\WorkSchedule\Service\AvailabilityStrategy\CivilContractStrategy:
+        tags: ['app.availability_strategy']
+
+    App\Domain\WorkSchedule\Service\AvailabilityStrategy\EmploymentContractStrategy:
+        tags: ['app.availability_strategy']
+
+    App\Controller\Api\WorkSchedule\AvailabilityController:
+        arguments:
+            $availabilityStrategies: !tagged_iterator app.availability_strategy
+            $availabilityRepository: '@App\Domain\WorkSchedule\Repository\AvailabilityRepositoryInterface'
+            $validator: '@validator'
+            $userRepository: '@App\Domain\User\Repository\UserRepositoryInterface'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

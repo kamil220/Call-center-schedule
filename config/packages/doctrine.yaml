@@ -10,6 +10,8 @@ doctrine:
         use_savepoints: true
         types:
             json: Doctrine\DBAL\Types\JsonType
+            user_id: App\Infrastructure\Doctrine\Type\UserIdType
+            uuid: Ramsey\Uuid\Doctrine\UuidType
         mapping_types:
             json: json
     orm:
