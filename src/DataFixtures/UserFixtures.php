@@ -42,7 +42,7 @@ class UserFixtures extends Fixture
             'admin@example.com',
             'Kamil',
             'Lazarz',
-            EmploymentType::FULL_TIME
+            EmploymentType::EMPLOYMENT_CONTRACT
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'admin123'));
@@ -59,7 +59,7 @@ class UserFixtures extends Fixture
             'planner@example.com',
             'John',
             'Doe',
-            EmploymentType::FULL_TIME
+            EmploymentType::EMPLOYMENT_CONTRACT
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'planner123'));
@@ -76,7 +76,7 @@ class UserFixtures extends Fixture
             'manager@example.com',
             'Alice',
             'Smith',
-            EmploymentType::FULL_TIME
+            EmploymentType::EMPLOYMENT_CONTRACT
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'manager123'));
@@ -89,8 +89,8 @@ class UserFixtures extends Fixture
     private function createAgent(ObjectManager $manager): void
     {
         $employmentTypes = [
-            EmploymentType::FULL_TIME,
-            EmploymentType::PART_TIME,
+            EmploymentType::EMPLOYMENT_CONTRACT,
+            EmploymentType::CIVIL_CONTRACT,
             EmploymentType::CONTRACTOR
         ];
         

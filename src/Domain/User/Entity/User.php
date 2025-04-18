@@ -7,6 +7,7 @@ namespace App\Domain\User\Entity;
 use App\Domain\User\Exception\InvalidRoleException;
 use App\Domain\User\Exception\InvalidManagerRoleException;
 use App\Domain\User\ValueObject\UserId;
+use App\Domain\User\ValueObject\EmploymentType;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -34,8 +35,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     ];
 
     #[ORM\Id]
-    #[ORM\Column(type: 'string')]
-    private string $id;
+    #[ORM\Column(type: 'user_id')]
+    private UserId $id;
 
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private string $email;
@@ -43,14 +44,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string')]
     private string $password;
 
+    /** @var string[] */
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: 'string')]
     private string $firstName;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: 'string')]
     private string $lastName;
+
+    #[ORM\Column(type: 'string', enumType: EmploymentType::class)]
+    private EmploymentType $employmentType;
 
     #[ORM\Column(type: 'boolean')]
     private bool $active = true;
@@ -69,16 +74,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         UserId $id,
         string $email,
         string $firstName,
-        string $lastName
+        string $lastName,
+        EmploymentType $employmentType
     ) {
-        $this->id = $id->toString();
+        $this->id = $id;
         $this->email = $email;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
+        $this->employmentType = $employmentType;
         $this->subordinates = [];
+        $this->roles[] = self::ROLE_AGENT;
     }
 
-    public function getId(): string
+    public function getId(): UserId
     {
         return $this->id;
     }
@@ -219,8 +227,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     
     public function setManager(?self $manager): self
     {
-        if ($manager !== null && !$this->isValidManager($manager)) {
-            throw new InvalidManagerRoleException();
+        if ($manager !== null && !$manager->canBeManager()) {
+            throw new InvalidManagerRoleException($manager->getFullName());
         }
         
         $this->manager = $manager;
@@ -238,24 +246,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($manager === null) {
             return true;
         }
-        
-        foreach (self::MANAGER_ROLES as $role) {
-            if ($manager->hasRole($role)) {
-                return true;
-            }
+
+        if ($manager === $this) {
+            return false;
         }
-        
-        return false;
+
+        return $manager->canBeManager();
     }
     
     public function canBeManager(): bool
     {
-        foreach (self::MANAGER_ROLES as $role) {
-            if ($this->hasRole($role)) {
+        foreach ($this->roles as $role) {
+            if (in_array($role, self::MANAGER_ROLES, true)) {
                 return true;
             }
         }
-        
+
         return false;
+    }
+
+    public function getEmploymentType(): EmploymentType
+    {
+        return $this->employmentType;
     }
 } 
