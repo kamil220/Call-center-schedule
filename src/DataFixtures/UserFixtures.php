@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\DataFixtures;
 
 use App\Domain\User\Entity\User;
+use App\Domain\User\ValueObject\EmploymentType;
 use App\Domain\User\ValueObject\UserId;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -39,8 +40,9 @@ class UserFixtures extends Fixture
         $user = new User(
             UserId::generate(),
             'admin@example.com',
-            'Admin',
-            'User'
+            'Kamil',
+            'Lazarz',
+            EmploymentType::FULL_TIME
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'admin123'));
@@ -55,8 +57,9 @@ class UserFixtures extends Fixture
         $user = new User(
             UserId::generate(),
             'planner@example.com',
-            'Planner',
-            'User'
+            'John',
+            'Doe',
+            EmploymentType::FULL_TIME
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'planner123'));
@@ -71,8 +74,9 @@ class UserFixtures extends Fixture
         $user = new User(
             UserId::generate(),
             'manager@example.com',
-            'Team',
-            'Manager'
+            'Alice',
+            'Smith',
+            EmploymentType::FULL_TIME
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'manager123'));
@@ -84,17 +88,30 @@ class UserFixtures extends Fixture
     
     private function createAgent(ObjectManager $manager): void
     {
-        $user = new User(
-            UserId::generate(),
-            'agent@example.com',
-            'Call',
-            'Agent'
-        );
+        $employmentTypes = [
+            EmploymentType::FULL_TIME,
+            EmploymentType::PART_TIME,
+            EmploymentType::CONTRACTOR
+        ];
         
-        $user->setPassword($this->passwordHasher->hashPassword($user, 'agent123'));
-        $user->addRole(User::ROLE_AGENT);
+        $numberOfAgents = 10;
+        $names = ['John', 'Jane', 'Jim', 'Jill', 'Jack', 'Jill', 'Jack', 'Jill', 'Jack', 'Jill'];
+        $lastNames = ['Doe', 'Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore'];
         
-        $manager->persist($user);
-        $this->addReference(self::AGENT_USER_REFERENCE, $user);
+        for ($i = 0; $i < $numberOfAgents; $i++) {
+            $user = new User(
+                UserId::generate(),
+                sprintf('agent%d@example.com', $i + 1),
+                $names[array_rand($names)],
+                $lastNames[array_rand($lastNames)],
+                $employmentTypes[array_rand($employmentTypes)]
+            );
+        
+            $user->setPassword($this->passwordHasher->hashPassword($user, 'agent123'));
+            $user->addRole(User::ROLE_AGENT);
+            
+            $manager->persist($user);
+            $this->addReference(sprintf('%s-%d', self::AGENT_USER_REFERENCE, $i), $user);
+        }
     }
 } 
