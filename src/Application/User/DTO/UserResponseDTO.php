@@ -46,7 +46,7 @@ final class UserResponseDTO
         $manager = $user->getManager();
         if ($manager !== null) {
             $managerData = [
-                'id' => $manager->getId(),
+                'id' => $manager->getId()->toString(),
                 'fullName' => $manager->getFullName(),
                 'email' => $manager->getEmail(),
             ];
@@ -55,7 +55,7 @@ final class UserResponseDTO
         $hireDate = $user->getHireDate() ? $user->getHireDate()->format('Y-m-d') : null;
         
         return new self(
-            $user->getId(),
+            $user->getId()->toString(),
             $user->getEmail(),
             $user->getFirstName(),
             $user->getLastName(),
