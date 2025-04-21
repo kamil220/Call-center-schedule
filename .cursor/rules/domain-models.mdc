@@ -1,0 +1,70 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Domain Models and Core Concepts
+
+This document outlines the key domain models and their relationships in the call center management system.
+
+## Employee Domain
+
+The Employee is a core entity representing call center staff:
+
+- **Employee**: A person who works in the call center
+  - Has attributes: id, name, email, phone, hire date, status
+  - Associated with multiple roles (agent, supervisor, admin)
+  - Has skills/competencies that determine eligible shift types
+  - Has availability preferences and constraints
+  - Has maximum working hours per day/week
+
+## Schedule Domain
+
+The Schedule domain manages work assignments:
+
+- **Schedule**: A collection of shifts for a specific period
+  - Has attributes: id, time period (start/end dates), status (draft, published, archived)
+  - Contains multiple shifts
+  - Can be published, which triggers notifications
+
+- **Shift**: A specific work period assigned to an employee
+  - Has attributes: id, start time, end time, break time, type
+  - Associated with one employee
+  - Has specific requirements (skills, seniority)
+  - May have constraints (min/max staffing levels)
+
+- **ShiftType**: Different categories of work periods
+  - Has attributes: id, name, description, required skills
+  - Examples: Morning, Afternoon, Night, Weekend
+
+## Role and Permission Domain
+
+- **Role**: Represents authorization level and job functions
+  - Has attributes: id, name, description
+  - Associated with specific permissions
+  - Examples: Agent, Supervisor, Manager, Administrator
+
+- **Permission**: Specific system actions that can be performed
+  - Has attributes: id, name, description, resource
+  - Examples: ViewSchedule, EditSchedule, ManageEmployees
+
+## Time and Attendance Domain
+
+- **TimeRecord**: Tracks actual work hours
+  - Has attributes: id, employee, check-in time, check-out time
+  - Used for attendance tracking and payroll
+
+- **Absence**: Records planned or unplanned time off
+  - Has attributes: id, employee, start date, end date, type, status
+  - Types include: Vacation, Sick Leave, Personal Leave
+
+## Domain Rules
+
+Important business rules that must be enforced:
+
+1. Employees cannot be scheduled for overlapping shifts
+2. Employees must have minimum rest periods between shifts (typically 11 hours)
+3. Schedules should try to accommodate employee preferences when possible
+4. Shifts must have adequate staffing based on forecasted call volume
+5. Required skills must be present for each shift type
+6. Maximum work hours per day and week must be respected

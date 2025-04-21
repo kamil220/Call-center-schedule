@@ -1,0 +1,320 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Implementation Patterns and Examples
+
+This document provides concrete implementation examples for the call center management system following our architectural principles.
+
+## Value Objects
+
+Value objects should be implemented as immutable objects that represent concepts without identity:
+
+```php
+declare(strict_types=1);
+
+namespace App\Domain\Schedule\ValueObject;
+
+final class WorkingHours
+{
+    private function __construct(
+        private readonly int $hours,
+        private readonly int $minutes
+    ) {
+        if ($hours < 0 || $minutes < 0 || $minutes >= 60) {
+            throw new \InvalidArgumentException('Invalid working hours');
+        }
+    }
+
+    public static function create(int $hours, int $minutes): self
+    {
+        return new self($hours, $minutes);
+    }
+
+    public static function fromMinutes(int $totalMinutes): self
+    {
+        $hours = (int) floor($totalMinutes / 60);
+        $minutes = $totalMinutes % 60;
+        
+        return new self($hours, $minutes);
+    }
+    
+    public function asMinutes(): int
+    {
+        return ($this->hours * 60) + $this->minutes;
+    }
+    
+    public function __toString(): string
+    {
+        return sprintf('%02d:%02d', $this->hours, $this->minutes);
+    }
+}
+```
+
+## Domain Events
+
+Domain events should be used to communicate changes within the domain:
+
+```php
+declare(strict_types=1);
+
+namespace App\Domain\Schedule\Event;
+
+use App\Domain\Schedule\Entity\Schedule;
+use DateTimeImmutable;
+
+final class SchedulePublishedEvent
+{
+    private DateTimeImmutable $occurredOn;
+    
+    public function __construct(
+        private readonly string $scheduleId,
+        private readonly string $publishedBy,
+        private readonly DateTimeImmutable $publishedAt
+    ) {
+        $this->occurredOn = new DateTimeImmutable();
+    }
+    
+    public function getScheduleId(): string
+    {
+        return $this->scheduleId;
+    }
+    
+    public function getPublishedBy(): string
+    {
+        return $this->publishedBy;
+    }
+    
+    public function getPublishedAt(): DateTimeImmutable
+    {
+        return $this->publishedAt;
+    }
+    
+    public function getOccurredOn(): DateTimeImmutable
+    {
+        return $this->occurredOn;
+    }
+}
+```
+
+## Repository Interfaces
+
+Define repository interfaces in the domain layer:
+
+```php
+declare(strict_types=1);
+
+namespace App\Domain\Employee\Repository;
+
+use App\Domain\Employee\Entity\Employee;
+use App\Domain\Employee\ValueObject\EmployeeId;
+
+interface EmployeeRepositoryInterface
+{
+    public function findById(EmployeeId $id): ?Employee;
+    
+    public function findByEmail(string $email): ?Employee;
+    
+    public function findAllWithSkill(string $skillCode): array;
+    
+    public function save(Employee $employee): void;
+    
+    public function remove(Employee $employee): void;
+}
+```
+
+## Use Cases (Application Services)
+
+Implement application use cases that orchestrate domain logic:
+
+```php
+declare(strict_types=1);
+
+namespace App\Application\Schedule\Command;
+
+use App\Domain\Employee\Repository\EmployeeRepositoryInterface;
+use App\Domain\Schedule\Entity\Shift;
+use App\Domain\Schedule\Repository\ShiftRepositoryInterface;
+use App\Domain\Schedule\Service\ShiftValidationService;
+use App\Domain\Schedule\ValueObject\ShiftId;
+
+final class AssignEmployeeToShiftHandler
+{
+    public function __construct(
+        private readonly ShiftRepositoryInterface $shiftRepository,
+        private readonly EmployeeRepositoryInterface $employeeRepository,
+        private readonly ShiftValidationService $shiftValidationService
+    ) {
+    }
+    
+    public function handle(AssignEmployeeToShiftCommand $command): void
+    {
+        $shift = $this->shiftRepository->findById(
+            new ShiftId($command->getShiftId())
+        );
+        
+        if (!$shift) {
+            throw new \InvalidArgumentException('Shift not found');
+        }
+        
+        $employee = $this->employeeRepository->findById(
+            $command->getEmployeeId()
+        );
+        
+        if (!$employee) {
+            throw new \InvalidArgumentException('Employee not found');
+        }
+        
+        // Validate business rules
+        $this->shiftValidationService->validateEmployeeAssignment(
+            $employee, 
+            $shift
+        );
+        
+        // Execute domain logic
+        $shift->assignEmployee($employee);
+        
+        // Persist changes
+        $this->shiftRepository->save($shift);
+    }
+}
+```
+
+## DTOs
+
+Use DTOs for data transfer across boundaries:
+
+```php
+declare(strict_types=1);
+
+namespace App\Application\Schedule\DTO;
+
+final class ShiftDTO
+{
+    public function __construct(
+        private readonly string $id,
+        private readonly string $startTime,
+        private readonly string $endTime,
+        private readonly string $type,
+        private readonly ?string $employeeId = null,
+        private readonly ?string $employeeName = null
+    ) {
+    }
+    
+    public function getId(): string
+    {
+        return $this->id;
+    }
+    
+    public function getStartTime(): string
+    {
+        return $this->startTime;
+    }
+    
+    public function getEndTime(): string
+    {
+        return $this->endTime;
+    }
+    
+    public function getType(): string
+    {
+        return $this->type;
+    }
+    
+    public function getEmployeeId(): ?string
+    {
+        return $this->employeeId;
+    }
+    
+    public function getEmployeeName(): ?string
+    {
+        return $this->employeeName;
+    }
+    
+    public function isAssigned(): bool
+    {
+        return $this->employeeId !== null;
+    }
+}
+```
+
+## API Controllers
+
+Implement controllers in the UI layer that use application services:
+
+```php
+declare(strict_types=1);
+
+namespace App\UI\Controller\Api\V1;
+
+use App\Application\Schedule\Command\AssignEmployeeToShiftCommand;
+use App\Application\Schedule\Query\GetShiftByIdQuery;
+use App\UI\Request\AssignEmployeeToShiftRequest;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\HandledStamp;
+
+#[Route('/api/v1/shifts')]
+final class ShiftController
+{
+    public function __construct(
+        private readonly MessageBusInterface $commandBus,
+        private readonly MessageBusInterface $queryBus
+    ) {
+    }
+    
+    #[Route('/{id}', methods: ['GET'])]
+    public function show(string $id): JsonResponse
+    {
+        $query = new GetShiftByIdQuery($id);
+        $envelope = $this->queryBus->dispatch($query);
+        
+        /** @var HandledStamp $handledStamp */
+        $handledStamp = $envelope->last(HandledStamp::class);
+        $shift = $handledStamp->getResult();
+        
+        if (!$shift) {
+            return new JsonResponse(['error' => 'Shift not found'], Response::HTTP_NOT_FOUND);
+        }
+        
+        return new JsonResponse($shift);
+    }
+    
+    #[Route('/{id}/assign', methods: ['POST'])]
+    public function assignEmployee(string $id, Request $request): JsonResponse
+    {
+        $assignRequest = new AssignEmployeeToShiftRequest($request);
+        
+        if (!$assignRequest->isValid()) {
+            return new JsonResponse(
+                ['errors' => $assignRequest->getErrors()], 
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+        
+        $command = new AssignEmployeeToShiftCommand(
+            $id,
+            $assignRequest->getEmployeeId()
+        );
+        
+        try {
+            $this->commandBus->dispatch($command);
+            
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        } catch (\InvalidArgumentException $e) {
+            return new JsonResponse(
+                ['error' => $e->getMessage()], 
+                Response::HTTP_BAD_REQUEST
+            );
+        } catch (\Exception $e) {
+            return new JsonResponse(
+                ['error' => 'An error occurred'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+}

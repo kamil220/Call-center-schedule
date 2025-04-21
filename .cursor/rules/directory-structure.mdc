@@ -1,0 +1,113 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Directory Structure and Important Files
+
+This document explains the organization of the call center management system codebase.
+
+## Primary Directory Structure
+
+The codebase follows Domain-Driven Design principles with a clear separation of concerns:
+
+```
+src/
+├── Domain/              # Core business logic and domain models
+├── Application/         # Use cases, commands, queries, and application services
+├── Infrastructure/      # Technical implementations (repositories, external services)
+├── UI/                  # User interfaces (API controllers, web controllers)
+├── Common/              # Shared utilities and base classes
+└── Kernel.php           # Symfony application kernel
+```
+
+## Domain Layer Structure
+
+```
+src/Domain/
+├── Employee/            # Employee domain context
+│   ├── Entity/          # Employee entities (Employee, Role, Skill)
+│   ├── ValueObject/     # Value objects (EmployeeId, SkillLevel)
+│   ├── Repository/      # Repository interfaces
+│   ├── Event/           # Domain events (EmployeeCreated, RoleAssigned)
+│   ├── Exception/       # Domain-specific exceptions
+│   └── Service/         # Domain services (EmployeeAvailabilityService)
+├── Schedule/            # Schedule domain context
+│   ├── Entity/          # Schedule entities (Schedule, Shift)
+│   ├── ValueObject/     # Value objects (WorkingHours, ShiftId)
+│   ├── Repository/      # Repository interfaces
+│   ├── Event/           # Domain events (ShiftAssigned, SchedulePublished)
+│   ├── Exception/       # Domain-specific exceptions
+│   └── Service/         # Domain services (ShiftAssignmentService)
+└── ... other domains
+```
+
+## Application Layer Structure
+
+```
+src/Application/
+├── Employee/            # Employee application services
+│   ├── Command/         # Commands and handlers (CreateEmployee, UpdateEmployeeRole)
+│   ├── Query/           # Queries and handlers (GetEmployeeList, FindEmployeeById)
+│   └── DTO/             # Data Transfer Objects (EmployeeDTO, EmployeeListItemDTO)
+├── Schedule/            # Schedule application services
+│   ├── Command/         # Commands and handlers (CreateShift, AssignEmployeeToShift)
+│   ├── Query/           # Queries and handlers (GetScheduleById, FindAvailableShifts)
+│   └── DTO/             # Data Transfer Objects (ShiftDTO, ScheduleDTO)
+└── ... other application services
+```
+
+## Infrastructure Layer Structure
+
+```
+src/Infrastructure/
+├── Persistence/         # Database-related implementations
+│   ├── Doctrine/        # Doctrine ORM implementations
+│   │   ├── Repository/  # Repository implementations
+│   │   ├── Mapping/     # Entity mapping configurations
+│   │   └── Type/        # Custom Doctrine types
+│   └── Redis/           # Redis cache implementations
+├── Api/                 # External API integrations
+│   └── Client/          # API clients for external services
+├── Notification/        # Notification service implementations
+│   ├── Email/           # Email notification service
+│   └── SMS/             # SMS notification service
+└── Security/            # Security implementations
+    └── Authentication/  # Authentication providers and services
+```
+
+## UI Layer Structure
+
+```
+src/UI/
+├── Api/                 # API-related components
+│   ├── Controller/      # API controllers
+│   │   └── V1/          # Version 1 API controllers
+│   ├── Request/         # API request validators
+│   ├── Response/        # API response formatters
+│   └── Middleware/      # API middleware components
+├── Web/                 # Web interface components
+│   ├── Controller/      # Web controllers
+│   └── Form/            # Form type definitions
+└── Console/             # Command-line interface components
+    └── Command/         # Console commands
+```
+
+## Important Files
+
+- `src/Kernel.php`: The Symfony application kernel that bootstraps the application
+- `.env`: Environment configuration settings
+- `composer.json`: Project dependencies
+- `config/routes.yaml`: API route definitions
+- `config/services.yaml`: Service container configuration
+- `config/packages/doctrine.yaml`: Database connection configuration
+
+## Key Implementation Files
+
+- Domain Entities: `src/Domain/*/Entity/*.php`
+- Repository Interfaces: `src/Domain/*/Repository/*RepositoryInterface.php`
+- Repository Implementations: `src/Infrastructure/Persistence/Doctrine/Repository/*Repository.php`
+- Application Commands: `src/Application/*/Command/*.php`
+- API Controllers: `src/UI/Api/Controller/V1/*.php`
+
+This structure ensures separation of concerns and follows the clean architecture principles, with the domain layer at the core and other layers built around it.
