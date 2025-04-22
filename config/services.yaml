@@ -53,6 +53,15 @@ services:
     App\Domain\WorkSchedule\Repository\AvailabilityRepositoryInterface:
         alias: App\Domain\WorkSchedule\Repository\AvailabilityRepository
 
+    # Leave Request Repository
+    App\Infrastructure\Persistence\Doctrine\Repository\LeaveRequestRepository:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+        tags: ['doctrine.repository_service']
+
+    App\Domain\WorkSchedule\Repository\LeaveRequestRepositoryInterface:
+        alias: App\Infrastructure\Persistence\Doctrine\Repository\LeaveRequestRepository
+
     # Availability Strategies
     App\Domain\WorkSchedule\Service\AvailabilityStrategy\B2BContractStrategy:
         tags: ['app.availability_strategy']
@@ -63,12 +72,41 @@ services:
     App\Domain\WorkSchedule\Service\AvailabilityStrategy\EmploymentContractStrategy:
         tags: ['app.availability_strategy']
 
+    # Leave Type Strategies
+    App\Domain\WorkSchedule\Service\LeaveType\SickLeaveStrategy:
+        tags: ['app.leave_type_strategy']
+
+    App\Domain\WorkSchedule\Service\LeaveType\HolidayLeaveStrategy:
+        tags: ['app.leave_type_strategy']
+
+    App\Domain\WorkSchedule\Service\LeaveType\PersonalLeaveStrategy:
+        tags: ['app.leave_type_strategy']
+
+    App\Domain\WorkSchedule\Service\LeaveType\PaternityLeaveStrategy:
+        tags: ['app.leave_type_strategy']
+
+    App\Domain\WorkSchedule\Service\LeaveType\MaternityLeaveStrategy:
+        tags: ['app.leave_type_strategy']
+
+    # Leave Type Strategy Factory
+    App\Domain\WorkSchedule\Service\LeaveType\LeaveTypeStrategyFactory:
+        arguments:
+            $strategies: !tagged_iterator app.leave_type_strategy
+
     App\Controller\Api\WorkSchedule\AvailabilityController:
         arguments:
             $availabilityStrategies: !tagged_iterator app.availability_strategy
             $availabilityRepository: '@App\Domain\WorkSchedule\Repository\AvailabilityRepositoryInterface'
             $validator: '@validator'
             $userRepository: '@App\Domain\User\Repository\UserRepositoryInterface'
+
+    # LeaveRequest Controller
+    App\Controller\Api\WorkSchedule\LeaveRequestController:
+        arguments:
+            $leaveRequestRepository: '@App\Domain\WorkSchedule\Repository\LeaveRequestRepositoryInterface'
+            $validator: '@validator'
+            $userRepository: '@App\Domain\User\Repository\UserRepositoryInterface'
+            $leaveTypeStrategyFactory: '@App\Domain\WorkSchedule\Service\LeaveType\LeaveTypeStrategyFactory'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
