@@ -419,30 +419,52 @@ final class LeaveRequestController extends AbstractController
                 in: 'query',
                 required: false,
                 schema: new OA\Schema(type: 'string', format: 'date')
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', default: 20)
             )
         ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'List of leave requests',
+                description: 'Paginated list of leave requests',
                 content: new OA\JsonContent(
-                    type: 'array',
-                    items: new OA\Items(
-                        properties: [
-                            new OA\Property(property: 'id', type: 'string', format: 'uuid'),
-                            new OA\Property(property: 'userId', type: 'string', format: 'uuid'),
-                            new OA\Property(property: 'userName', type: 'string'),
-                            new OA\Property(property: 'type', type: 'string'),
-                            new OA\Property(property: 'status', type: 'string'),
-                            new OA\Property(property: 'startDate', type: 'string', format: 'date'),
-                            new OA\Property(property: 'endDate', type: 'string', format: 'date'),
-                            new OA\Property(property: 'reason', type: 'string', nullable: true),
-                            new OA\Property(property: 'approver', type: 'string', nullable: true),
-                            new OA\Property(property: 'approvalDate', type: 'string', format: 'date-time', nullable: true),
-                            new OA\Property(property: 'comments', type: 'string', nullable: true),
-                            new OA\Property(property: 'createdAt', type: 'string', format: 'date-time')
-                        ]
-                    )
+                    properties: [
+                        new OA\Property(property: 'items', type: 'array', items: new OA\Items(
+                            properties: [
+                                new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+                                new OA\Property(property: 'userId', type: 'string', format: 'uuid'),
+                                new OA\Property(property: 'userName', type: 'string'),
+                                new OA\Property(property: 'type', type: 'string'),
+                                new OA\Property(property: 'typeLabel', type: 'string'),
+                                new OA\Property(property: 'typeColor', type: 'string'),
+                                new OA\Property(property: 'status', type: 'string'),
+                                new OA\Property(property: 'statusLabel', type: 'string'),
+                                new OA\Property(property: 'statusColor', type: 'string'),
+                                new OA\Property(property: 'startDate', type: 'string', format: 'date'),
+                                new OA\Property(property: 'endDate', type: 'string', format: 'date'),
+                                new OA\Property(property: 'duration', type: 'integer'),
+                                new OA\Property(property: 'reason', type: 'string', nullable: true),
+                                new OA\Property(property: 'approver', type: 'string', nullable: true),
+                                new OA\Property(property: 'approvalDate', type: 'string', format: 'date-time', nullable: true),
+                                new OA\Property(property: 'comments', type: 'string', nullable: true),
+                                new OA\Property(property: 'createdAt', type: 'string', format: 'date-time')
+                            ]
+                        )),
+                        new OA\Property(property: 'total', type: 'integer'),
+                        new OA\Property(property: 'page', type: 'integer'),
+                        new OA\Property(property: 'limit', type: 'integer'),
+                        new OA\Property(property: 'totalPages', type: 'integer')
+                    ]
                 )
             ),
             new OA\Response(response: 400, description: 'Invalid parameters'),
@@ -459,7 +481,9 @@ final class LeaveRequestController extends AbstractController
             'status' => new Assert\Optional([new Assert\Choice(['pending', 'approved', 'rejected', 'cancelled'])]),
             'type' => new Assert\Optional([new Assert\Choice(array_keys($this->getAvailableLeaveTypes()))]),
             'startDate' => new Assert\Optional([new Assert\Date()]),
-            'endDate' => new Assert\Optional([new Assert\Date()])
+            'endDate' => new Assert\Optional([new Assert\Date()]),
+            'page' => new Assert\Optional([new Assert\Type('numeric'), new Assert\GreaterThan(0)]),
+            'limit' => new Assert\Optional([new Assert\Type('numeric'), new Assert\GreaterThan(0)]),
         ]);
         
         $violations = $this->validator->validate($queryParams, $dateConstraints);
@@ -474,46 +498,76 @@ final class LeaveRequestController extends AbstractController
         $typeStr = isset($queryParams['type']) ? $queryParams['type'] : null;
         $startDate = isset($queryParams['startDate']) ? new DateTimeImmutable($queryParams['startDate']) : null;
         $endDate = isset($queryParams['endDate']) ? new DateTimeImmutable($queryParams['endDate']) : null;
+        $page = isset($queryParams['page']) ? (int) $queryParams['page'] : 1;
+        $limit = isset($queryParams['limit']) ? (int) $queryParams['limit'] : 20;
         
-        // Determine which leave requests to fetch based on user role and query parameters
+        // Special case for admins viewing all leave requests without filters
+        if ($this->isGranted('ROLE_ADMIN') && !$userId && !$statusStr && !$typeStr && !$startDate && !$endDate) {
+            $total = $this->leaveRequestRepository->countAll();
+            $leaveRequests = $this->leaveRequestRepository->findAll($page, $limit);
+            
+            $items = array_map(
+                [$this, 'mapLeaveRequestToArray'],
+                $leaveRequests
+            );
+            
+            $paginatedResponse = new \App\Common\DTO\PaginatedResponseDTO($items, $total, $page, $limit);
+            return new JsonResponse($paginatedResponse->toArray());
+        }
+        
+        // Regular case - get filtered leave requests
         $leaveRequests = $this->getLeaveRequests($userId, $statusStr, $typeStr, $startDate, $endDate);
         
-        return new JsonResponse(
-            array_map(
-                function (LeaveRequest $request) {
-                    $user = $request->getUser();
-                    $approver = $request->getApprover();
-                    $leaveType = $request->getType();
-                    $leaveStrategy = $this->leaveTypeStrategyFactory->getStrategy($leaveType->value);
-                    
-                    return [
-                        'id' => (string) $request->getId(),
-                        'userId' => (string) $user->getId(),
-                        'userName' => $user->getFirstName() . ' ' . $user->getLastName(),
-                        'type' => $leaveType->value,
-                        'typeLabel' => $leaveStrategy->getLabel(),
-                        'typeColor' => $leaveStrategy->getColor(),
-                        'status' => $request->getStatus()->value,
-                        'statusLabel' => $request->getStatus()->getLabel(),
-                        'statusColor' => $request->getStatus()->getColor(),
-                        'startDate' => $request->getStartDate()->format('Y-m-d'),
-                        'endDate' => $request->getEndDate()->format('Y-m-d'),
-                        'duration' => $leaveStrategy->calculateDuration(
-                            $request->getStartDate(), 
-                            $request->getEndDate()
-                        ),
-                        'reason' => $request->getReason(),
-                        'approver' => $approver ? $approver->getFirstName() . ' ' . $approver->getLastName() : null,
-                        'approvalDate' => $request->getApprovalDate() ? $request->getApprovalDate()->format('c') : null,
-                        'comments' => $request->getComments(),
-                        'createdAt' => $request->getCreatedAt()->format('c')
-                    ];
-                },
-                $leaveRequests
-            )
+        // Apply pagination
+        $total = count($leaveRequests);
+        $offset = ($page - 1) * $limit;
+        $paginatedRequests = array_slice($leaveRequests, $offset, $limit);
+        
+        // Map leave requests to DTOs
+        $items = array_map(
+            [$this, 'mapLeaveRequestToArray'],
+            $paginatedRequests
         );
+        
+        // Create and return a paginated response
+        $paginatedResponse = new \App\Common\DTO\PaginatedResponseDTO($items, $total, $page, $limit);
+        return new JsonResponse($paginatedResponse->toArray());
     }
     
+    /**
+     * Map a LeaveRequest entity to an array for API response
+     */
+    private function mapLeaveRequestToArray(LeaveRequest $request): array
+    {
+        $user = $request->getUser();
+        $approver = $request->getApprover();
+        $leaveType = $request->getType();
+        $leaveStrategy = $this->leaveTypeStrategyFactory->getStrategy($leaveType->value);
+        
+        return [
+            'id' => (string) $request->getId(),
+            'userId' => (string) $user->getId(),
+            'userName' => $user->getFirstName() . ' ' . $user->getLastName(),
+            'type' => $leaveType->value,
+            'typeLabel' => $leaveStrategy->getLabel(),
+            'typeColor' => $leaveStrategy->getColor(),
+            'status' => $request->getStatus()->value,
+            'statusLabel' => $request->getStatus()->getLabel(),
+            'statusColor' => $request->getStatus()->getColor(),
+            'startDate' => $request->getStartDate()->format('Y-m-d'),
+            'endDate' => $request->getEndDate()->format('Y-m-d'),
+            'duration' => $leaveStrategy->calculateDuration(
+                $request->getStartDate(), 
+                $request->getEndDate()
+            ),
+            'reason' => $request->getReason(),
+            'approver' => $approver ? $approver->getFirstName() . ' ' . $approver->getLastName() : null,
+            'approvalDate' => $request->getApprovalDate() ? $request->getApprovalDate()->format('c') : null,
+            'comments' => $request->getComments(),
+            'createdAt' => $request->getCreatedAt()->format('c')
+        ];
+    }
+
     /**
      * Get a list of available leave types
      */
@@ -575,7 +629,9 @@ final class LeaveRequestController extends AbstractController
         ?string $statusStr = null, 
         ?string $typeStr = null,
         ?DateTimeImmutable $startDate = null,
-        ?DateTimeImmutable $endDate = null
+        ?DateTimeImmutable $endDate = null,
+        int $page = 1,
+        int $limit = 20
     ): array {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
@@ -617,8 +673,8 @@ final class LeaveRequestController extends AbstractController
                 } elseif ($type) {
                     $leaveRequests = $this->leaveRequestRepository->findByType($type);
                 } else {
-                    // TODO: Implement a method to get all requests with pagination
-                    $leaveRequests = []; // For now, return empty to avoid too many results
+                    // Use pagination for all requests to avoid performance issues
+                    return $this->leaveRequestRepository->findAll($page, $limit);
                 }
             } elseif ($this->isGranted('ROLE_MANAGER')) {
                 // Managers see pending requests from their team

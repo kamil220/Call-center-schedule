@@ -56,4 +56,14 @@ interface LeaveRequestRepositoryInterface
         DateTimeImmutable $endDate,
         ?string $excludeId = null
     ): array;
+    
+    /**
+     * Find all leave requests with pagination
+     */
+    public function findAll(int $page = 1, int $limit = 20): array;
+    
+    /**
+     * Count total number of leave requests
+     */
+    public function countAll(): int;
 } 

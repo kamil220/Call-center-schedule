@@ -135,4 +135,27 @@ class LeaveRequestRepository implements LeaveRequestRepositoryInterface
 
         return $qb->getQuery()->getResult();
     }
+
+    public function findAll(int $page = 1, int $limit = 20): array
+    {
+        $offset = ($page - 1) * $limit;
+        
+        return $this->entityManager->createQueryBuilder()
+            ->select('lr')
+            ->from(LeaveRequest::class, 'lr')
+            ->orderBy('lr.createdAt', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countAll(): int
+    {
+        return (int) $this->entityManager->createQueryBuilder()
+            ->select('COUNT(lr.id)')
+            ->from(LeaveRequest::class, 'lr')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 } 
