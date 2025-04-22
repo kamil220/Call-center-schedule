@@ -20,14 +20,16 @@ class AvailabilityRepository extends ServiceEntityRepository implements Availabi
 
     public function save(Availability $availability): void
     {
-        $this->_em->persist($availability);
-        $this->_em->flush();
+        $entityManager = $this->getEntityManager();
+        $entityManager->persist($availability);
+        $entityManager->flush();
     }
 
     public function remove(Availability $availability): void
     {
-        $this->_em->remove($availability);
-        $this->_em->flush();
+        $entityManager = $this->getEntityManager();
+        $entityManager->remove($availability);
+        $entityManager->flush();
     }
 
     public function findById(string $id): ?Availability

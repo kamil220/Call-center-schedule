@@ -45,7 +45,7 @@ final class AvailabilityController extends AbstractController
         $this->userRepository = $userRepository;
     }
 
-    #[Route('/api/work-schedule/availabilities', methods: ['POST'])]
+    #[Route('', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     #[OA\Post(
         path: '/api/work-schedule/availabilities',
@@ -53,8 +53,9 @@ final class AvailabilityController extends AbstractController
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['startTime', 'endTime', 'userId'],
+                required: ['startTime', 'endTime', 'userId', 'date'],
                 properties: [
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2025-04-20'),
                     new OA\Property(property: 'startTime', type: 'string', format: 'time'),
                     new OA\Property(property: 'endTime', type: 'string', format: 'time'),
                     new OA\Property(property: 'userId', type: 'string', format: 'uuid'),
@@ -91,6 +92,10 @@ final class AvailabilityController extends AbstractController
             'userId' => [
                 new Assert\NotBlank(),
                 new Assert\Uuid(),
+            ],
+            'date' => [
+                new Assert\NotBlank(),
+                new Assert\Date()
             ],
             'startTime' => [
                 new Assert\NotBlank(),
@@ -156,6 +161,7 @@ final class AvailabilityController extends AbstractController
                 return new JsonResponse(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
             }
 
+            $date = new DateTimeImmutable($data['date']);
             $startTime = DateTimeImmutable::createFromFormat('H:i', $data['startTime']);
             $endTime = DateTimeImmutable::createFromFormat('H:i', $data['endTime']);
             
@@ -182,7 +188,7 @@ final class AvailabilityController extends AbstractController
                 $user,
                 $user->getEmploymentType(),
                 $timeRange,
-                new DateTimeImmutable(),
+                $date,
                 $recurrencePatternData
             );
 
