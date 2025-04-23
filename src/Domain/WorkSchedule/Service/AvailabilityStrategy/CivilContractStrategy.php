@@ -36,6 +36,7 @@ final class CivilContractStrategy implements AvailabilityStrategyInterface
         $this->validateTimeRange($availability);
         $this->validateWeeklyHours($availability);
         $this->validateNoticePeriod($availability);
+        $this->validateWeekendWork($availability);
     }
 
     private function validateTimeRange(Availability $availability): void
@@ -91,5 +92,10 @@ final class CivilContractStrategy implements AvailabilityStrategyInterface
                 )
             );
         }
+    }
+
+    private function validateWeekendWork(Availability $availability): void
+    {
+        // Implementation needed
     }
 } 

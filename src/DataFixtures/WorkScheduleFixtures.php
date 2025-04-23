@@ -27,40 +27,42 @@ class WorkScheduleFixtures extends Fixture implements DependentFixtureInterface
             $morningShiftPattern = [
                 'frequency' => 'weekly',
                 'interval' => 1,
-                'daysOfWeek' => [1, 2, 3, 4, 5], // Monday-Friday
-                'excludeDates' => ['2025-05-01', '2025-05-03'], // Holdays in May
+                'daysOfWeek' => [1, 3, 5], // Monday, Wednesday, Friday
+                'excludeDates' => ['2025-05-01', '2025-05-03'], // Holidays in May
                 'until' => '2025-06-30'
             ];
 
             $afternoonShiftPattern = [
                 'frequency' => 'weekly',
                 'interval' => 1,
-                'daysOfWeek' => [1, 2, 3, 4, 5],
+                'daysOfWeek' => [2, 4], // Tuesday, Thursday
                 'excludeDates' => ['2025-05-01', '2025-05-03'],
                 'until' => '2025-06-30'
             ];
 
-            // For full-time employees, generate both shifts
+            // For full-time employees, generate both shifts on different days
             if ($agent->getEmploymentType() === EmploymentType::EMPLOYMENT_CONTRACT) {
+                // Morning shift starts on Monday
                 $this->createAvailability(
                     $manager,
                     $agent,
-                    new DateTimeImmutable('2025-04-01'),
+                    new DateTimeImmutable('2025-04-01'), // Monday
                     '08:00',
                     '16:00',
                     $morningShiftPattern
                 );
 
+                // Afternoon shift starts on Tuesday
                 $this->createAvailability(
                     $manager,
                     $agent,
-                    new DateTimeImmutable('2025-04-01'),
+                    new DateTimeImmutable('2025-04-02'), // Tuesday
                     '14:00',
                     '22:00',
                     $afternoonShiftPattern
                 );
             }
-            // For part-time employees, only morning shift
+            // For part-time employees, only morning shift on specific days
             elseif ($agent->getEmploymentType() === EmploymentType::CIVIL_CONTRACT) {
                 $this->createAvailability(
                     $manager,
@@ -68,10 +70,16 @@ class WorkScheduleFixtures extends Fixture implements DependentFixtureInterface
                     new DateTimeImmutable('2025-04-01'),
                     '08:00',
                     '16:00',
-                    $morningShiftPattern
+                    [
+                        'frequency' => 'weekly',
+                        'interval' => 1,
+                        'daysOfWeek' => [1, 3], // Monday, Wednesday only
+                        'excludeDates' => ['2025-05-01'],
+                        'until' => '2025-06-30'
+                    ]
                 );
             }
-            // For flexible hours contractors
+            // For contractors (B2B), flexible hours on all weekdays
             else {
                 $this->createAvailability(
                     $manager,
@@ -79,17 +87,22 @@ class WorkScheduleFixtures extends Fixture implements DependentFixtureInterface
                     new DateTimeImmutable('2025-04-01'),
                     '10:00',
                     '18:00',
-                    $morningShiftPattern
+                    [
+                        'frequency' => 'weekly',
+                        'interval' => 1,
+                        'daysOfWeek' => [1, 2, 3, 4, 5],
+                        'excludeDates' => ['2025-05-01'],
+                        'until' => '2025-06-30'
+                    ]
                 );
             }
 
             // Add single weekend availability (without recurrence pattern)
+            // Only for contractors and full-time employees, every second weekend
             if ($agent->getEmploymentType() !== EmploymentType::CIVIL_CONTRACT) {
                 $weekendDates = [
-                    '2025-04-06', '2025-04-07',
-                    '2025-04-13', '2025-04-14',
-                    '2025-04-20', '2025-04-21',
-                    '2025-04-27', '2025-04-28'
+                    '2025-04-06', // First weekend
+                    '2025-04-20', // Third weekend
                 ];
 
                 foreach ($weekendDates as $date) {

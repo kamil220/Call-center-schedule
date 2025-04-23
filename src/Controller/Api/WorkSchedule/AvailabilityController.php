@@ -473,6 +473,15 @@ final class AvailabilityController extends AbstractController
 
     private function validateAvailability(Availability $availability): void
     {
+        // 1. Check for overlapping availability first (universal rule)
+        $overlapping = $this->availabilityRepository->findOverlapping($availability);
+        if (count($overlapping) > 0) {
+            throw new InvalidAvailabilityException(
+                'This time range overlaps with existing availability for this user on the same date.'
+            );
+        }
+
+        // 2. Find and apply the correct strategy-specific validation
         foreach ($this->availabilityStrategies as $strategy) {
             if ($strategy->supports($availability->getEmploymentType())) {
                 $strategy->validate($availability);
@@ -480,7 +489,7 @@ final class AvailabilityController extends AbstractController
             }
         }
 
-        throw new InvalidAvailabilityException('No strategy found for employment type: ' . $availability->getEmploymentType()->value);
+        throw new InvalidAvailabilityException('No validation strategy found for employment type: ' . $availability->getEmploymentType()->value);
     }
 
     private function getErrorMessages(ConstraintViolationListInterface $violations): array
