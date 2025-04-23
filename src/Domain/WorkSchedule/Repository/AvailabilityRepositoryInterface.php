@@ -20,6 +20,11 @@ interface AvailabilityRepositoryInterface extends ObjectRepository
     /**
      * @return Availability[]
      */
+    public function findByUser(User $user): array;
+    
+    /**
+     * @return Availability[]
+     */
     public function findByUserAndDateRange(User $user, DateTimeImmutable $startDate, DateTimeImmutable $endDate): array;
     
     /**

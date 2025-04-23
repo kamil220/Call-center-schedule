@@ -224,6 +224,77 @@ final class RecurrencePattern implements JsonSerializable
         }
     }
 
+    /**
+     * Generates occurrence dates for this pattern within a given range.
+     *
+     * @param DateTimeImmutable $patternStartDate The date the availability pattern starts from.
+     * @param DateTimeImmutable $rangeStart Start of the date range to find occurrences in.
+     * @param DateTimeImmutable $rangeEnd End of the date range to find occurrences in.
+     * @return array<DateTimeImmutable>
+     */
+    public function getOccurrences(DateTimeImmutable $patternStartDate, DateTimeImmutable $rangeStart, DateTimeImmutable $rangeEnd): array
+    {
+        $occurrences = [];
+        $effectiveEndDate = $this->until ? min($rangeEnd, $this->until) : $rangeEnd;
+
+        // Ensure we don't generate dates before the pattern actually starts
+        $currentDate = max($patternStartDate, $rangeStart);
+
+        while ($currentDate <= $effectiveEndDate) {
+            $isValid = false;
+            switch ($this->frequency) {
+                case self::FREQUENCY_DAILY:
+                    // Daily check: occurs every 'interval' days starting from patternStartDate
+                    $diffInDays = $patternStartDate->diff($currentDate)->days;
+                    if ($diffInDays % $this->interval === 0) {
+                        $isValid = true;
+                    }
+                    break;
+
+                case self::FREQUENCY_WEEKLY:
+                    // Weekly check: occurs every 'interval' weeks on specified daysOfWeek
+                     // Check if the week itself is valid based on interval
+                    $weekDiff = (int)floor($patternStartDate->diff($currentDate)->days / 7);
+                    if ($weekDiff % $this->interval === 0) {
+                         // Check if the day of the week matches
+                         $currentDayOfWeek = (int)$currentDate->format('w'); // 0 (Sun) to 6 (Sat)
+                         if ($this->daysOfWeek !== null && in_array($currentDayOfWeek, $this->daysOfWeek, true)) {
+                            $isValid = true;
+                         }
+                    }
+                    break;
+
+                case self::FREQUENCY_MONTHLY:
+                    // Monthly check: occurs every 'interval' months on specified daysOfMonth
+                    // Calculate month difference carefully
+                     $monthDiff = (($currentDate->format('Y') - $patternStartDate->format('Y')) * 12)
+                                 + ($currentDate->format('n') - $patternStartDate->format('n'));
+                     if ($monthDiff >= 0 && $monthDiff % $this->interval === 0) {
+                          // Check if the day of the month matches
+                         $currentDayOfMonth = (int)$currentDate->format('j');
+                         if ($this->daysOfMonth !== null && in_array($currentDayOfMonth, $this->daysOfMonth, true)) {
+                             $isValid = true;
+                         }
+                     }
+                     break;
+            }
+
+            // Final checks: must be within range, after pattern start, and not excluded
+            if ($isValid &&
+                $currentDate >= $rangeStart && // Must be within requested range
+                $currentDate <= $effectiveEndDate &&
+                !isset($this->excludeDates[$currentDate->format('Y-m-d')]) // Check exclusion list
+            ) {
+                $occurrences[] = $currentDate;
+            }
+
+            // Move to the next day to check
+            $currentDate = $currentDate->modify('+1 day');
+        }
+
+        return $occurrences;
+    }
+
     public function jsonSerialize(): array
     {
         return [

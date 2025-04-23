@@ -37,6 +37,14 @@ class AvailabilityRepository extends ServiceEntityRepository implements Availabi
         return $this->findOneBy(['id' => Uuid::fromString($id)]);
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function findByUser(User $user): array
+    {
+        return $this->findBy(['user' => $user]);
+    }
+
     public function findByUserAndDateRange(User $user, DateTimeImmutable $startDate, DateTimeImmutable $endDate): array
     {
         return $this->createQueryBuilder('a')

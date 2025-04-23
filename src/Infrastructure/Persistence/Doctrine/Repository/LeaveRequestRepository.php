@@ -158,4 +158,26 @@ class LeaveRequestRepository implements LeaveRequestRepositoryInterface
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function findActiveByUserIntersectingDateRange(User $user, DateTimeImmutable $startDate, DateTimeImmutable $endDate): array
+    {
+        return $this->entityManager->createQueryBuilder()
+            ->select('lr')
+            ->from(LeaveRequest::class, 'lr')
+            ->where('lr.user = :user')
+            ->andWhere('lr.status IN (:statuses)')
+            // Check for intersection: (LeaveStart <= RangeEnd) AND (LeaveEnd >= RangeStart)
+            ->andWhere('lr.startDate <= :endDate')
+            ->andWhere('lr.endDate >= :startDate')
+            ->setParameter('user', $user)
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->setParameter('statuses', [LeaveStatus::APPROVED, LeaveStatus::PENDING])
+            ->orderBy('lr.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 } 

@@ -48,6 +48,13 @@ interface LeaveRequestRepositoryInterface
     public function findPendingRequestsForManager(User $manager): array;
     
     /**
+     * Find leave requests (e.g., Approved, Pending) for a user that intersect with a given date range.
+     *
+     * @return LeaveRequest[]
+     */
+    public function findActiveByUserIntersectingDateRange(User $user, DateTimeImmutable $startDate, DateTimeImmutable $endDate): array;
+    
+    /**
      * Find overlapping leave requests
      */
     public function findOverlappingRequests(
