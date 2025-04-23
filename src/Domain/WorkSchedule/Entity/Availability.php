@@ -11,29 +11,57 @@ use App\Domain\WorkSchedule\ValueObject\TimeRange;
 use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\UuidInterface;
+use OpenApi\Attributes as OA;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'work_schedule_availabilities')]
+#[OA\Schema(
+    schema: 'Availability',
+    description: 'Availability model'
+)]
 class Availability
 {
     #[ORM\Id]
     #[ORM\Column(type: 'uuid')]
+    #[OA\Property(type: 'string', format: 'uuid')]
     private UuidInterface $id;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
+    #[OA\Property(type: 'string', format: 'uuid', description: 'ID of the user this availability belongs to')]
     private User $user;
 
     #[ORM\Column(type: 'string', enumType: EmploymentType::class)]
+    #[OA\Property(type: 'string', enum: ['FULL_TIME', 'PART_TIME', 'CONTRACTOR'])]
     private EmploymentType $employmentType;
 
     #[ORM\Embedded(class: TimeRange::class)]
+    #[OA\Property(
+        type: 'object',
+        properties: [
+            new OA\Property(property: 'startTime', type: 'string', format: 'time'),
+            new OA\Property(property: 'endTime', type: 'string', format: 'time')
+        ]
+    )]
     private TimeRange $timeRange;
 
     #[ORM\Column(type: 'date_immutable')]
+    #[OA\Property(type: 'string', format: 'date')]
     private DateTimeImmutable $date;
 
     #[ORM\Column(type: 'json', nullable: true)]
+    #[OA\Property(
+        type: 'object',
+        nullable: true,
+        properties: [
+            new OA\Property(property: 'frequency', type: 'string', enum: ['DAILY', 'WEEKLY', 'MONTHLY']),
+            new OA\Property(property: 'interval', type: 'integer', minimum: 1),
+            new OA\Property(property: 'daysOfWeek', type: 'array', items: new OA\Items(type: 'integer', minimum: 0, maximum: 6)),
+            new OA\Property(property: 'daysOfMonth', type: 'array', items: new OA\Items(type: 'integer', minimum: 1, maximum: 31)),
+            new OA\Property(property: 'excludeDates', type: 'array', items: new OA\Items(type: 'string', format: 'date')),
+            new OA\Property(property: 'until', type: 'string', format: 'date', nullable: true)
+        ]
+    )]
     private ?array $recurrencePatternData = null;
 
     private ?RecurrencePattern $recurrencePattern = null;

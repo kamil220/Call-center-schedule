@@ -78,7 +78,28 @@ final class AvailabilityController extends AbstractController
             new OA\Response(
                 response: 201,
                 description: 'Availability created successfully',
-                content: new OA\JsonContent(ref: '#/components/schemas/Availability')
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'string', format: 'uuid', description: 'The ID of the created availability'),
+                        new OA\Property(property: 'userId', type: 'string', format: 'uuid', description: 'The ID of the user'),
+                        new OA\Property(property: 'date', type: 'string', format: 'date'),
+                        new OA\Property(property: 'startTime', type: 'string', format: 'time'),
+                        new OA\Property(property: 'endTime', type: 'string', format: 'time'),
+                        new OA\Property(
+                            property: 'recurrencePattern',
+                            type: 'object',
+                            nullable: true,
+                            properties: [
+                                new OA\Property(property: 'frequency', type: 'string', enum: ['DAILY', 'WEEKLY', 'MONTHLY']),
+                                new OA\Property(property: 'interval', type: 'integer', minimum: 1),
+                                new OA\Property(property: 'daysOfWeek', type: 'array', items: new OA\Items(type: 'integer', minimum: 0, maximum: 6)),
+                                new OA\Property(property: 'daysOfMonth', type: 'array', items: new OA\Items(type: 'integer', minimum: 1, maximum: 31)),
+                                new OA\Property(property: 'excludeDates', type: 'array', items: new OA\Items(type: 'string', format: 'date')),
+                                new OA\Property(property: 'until', type: 'string', format: 'date', nullable: true)
+                            ]
+                        )
+                    ]
+                )
             ),
             new OA\Response(response: 400, description: 'Invalid input'),
             new OA\Response(response: 404, description: 'User not found')
