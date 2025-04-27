@@ -47,7 +47,7 @@ final class LeaveRequestController extends AbstractController
     }
 
     #[Route('', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     #[OA\Post(
         path: '/api/work-schedule/leave-requests',
         summary: 'Create a new leave request',
@@ -82,6 +82,11 @@ final class LeaveRequestController extends AbstractController
     )]
     public function create(Request $request): JsonResponse
     {
+        // Check if user has required role
+        if (!$this->isGranted('ROLE_AGENT') && !$this->isGranted('ROLE_ADMIN')) {
+            return new JsonResponse(['error' => 'Access Denied.'], Response::HTTP_FORBIDDEN);
+        }
+
         $data = json_decode($request->getContent(), true);
 
         $constraints = new Assert\Collection([
@@ -329,7 +334,7 @@ final class LeaveRequestController extends AbstractController
     }
 
     #[Route('/{id}/cancel', methods: ['PUT'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_AGENT')]
     #[OA\Put(
         path: '/api/work-schedule/leave-requests/{id}/cancel',
         summary: 'Cancel a leave request',
@@ -383,7 +388,7 @@ final class LeaveRequestController extends AbstractController
     }
 
     #[Route('', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_AGENT')]
     #[OA\Get(
         path: '/api/work-schedule/leave-requests',
         summary: 'Get leave requests',
@@ -572,7 +577,7 @@ final class LeaveRequestController extends AbstractController
      * Get a list of available leave types
      */
     #[Route('/types', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
+    #[IsGranted('ROLE_AGENT')]
     #[OA\Get(
         path: '/api/work-schedule/leave-requests/types',
         summary: 'Get available leave types',

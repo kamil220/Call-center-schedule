@@ -12,8 +12,10 @@ doctrine:
             json: Doctrine\DBAL\Types\JsonType
             user_id: App\Infrastructure\Doctrine\Type\UserIdType
             uuid: Ramsey\Uuid\Doctrine\UuidType
+            date_immutable: Doctrine\DBAL\Types\DateImmutableType
         mapping_types:
             json: json
+            datetime: date
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true

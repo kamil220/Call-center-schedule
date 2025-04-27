@@ -13,6 +13,7 @@ security:
         ROLE_ADMIN: [ROLE_AGENT, ROLE_PLANNER, ROLE_TEAM_MANAGER]
         ROLE_TEAM_MANAGER: [ROLE_AGENT]
         ROLE_PLANNER: [ROLE_AGENT, ROLE_TEAM_MANAGER]
+        ROLE_AGENT: [ROLE_USER]
 
     firewalls:
         dev:
