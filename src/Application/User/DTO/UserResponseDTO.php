@@ -17,6 +17,7 @@ final class UserResponseDTO
     private bool $active;
     private ?string $hireDate;
     private ?array $manager;
+    private string $employmentType;
 
     public function __construct(
         string $id,
@@ -27,7 +28,8 @@ final class UserResponseDTO
         array $roles,
         bool $active,
         ?string $hireDate,
-        ?array $manager
+        ?array $manager,
+        string $employmentType
     ) {
         $this->id = $id;
         $this->email = $email;
@@ -38,6 +40,7 @@ final class UserResponseDTO
         $this->active = $active;
         $this->hireDate = $hireDate;
         $this->manager = $manager;
+        $this->employmentType = $employmentType;
     }
 
     public static function fromEntity(User $user): self
@@ -63,7 +66,8 @@ final class UserResponseDTO
             $user->getRoles(),
             $user->isActive(),
             $hireDate,
-            $managerData
+            $managerData,
+            $user->getEmploymentType()->value
         );
     }
 
@@ -112,6 +116,11 @@ final class UserResponseDTO
         return $this->manager;
     }
 
+    public function getEmploymentType(): string
+    {
+        return $this->employmentType;
+    }
+
     public function toArray(): array
     {
         return [
@@ -124,6 +133,7 @@ final class UserResponseDTO
             'active' => $this->active,
             'hireDate' => $this->hireDate,
             'manager' => $this->manager,
+            'employmentType' => $this->employmentType,
         ];
     }
 } 
