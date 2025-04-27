@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace App\Domain\User\Entity;
 
+use App\Domain\Employee\Entity\EmployeeSkill;
+use App\Domain\Employee\Entity\EmployeeSkillPath;
 use App\Domain\User\Exception\InvalidRoleException;
 use App\Domain\User\Exception\InvalidManagerRoleException;
 use App\Domain\User\ValueObject\UserId;
 use App\Domain\User\ValueObject\EmploymentType;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
@@ -36,9 +41,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Id]
     #[ORM\Column(type: 'user_id')]
+    #[Groups(['user:read'])]
     private UserId $id;
 
     #[ORM\Column(type: 'string', length: 180, unique: true)]
+    #[Groups(['user:read'])]
     private string $email;
 
     #[ORM\Column(type: 'string')]
@@ -46,29 +53,45 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     /** @var string[] */
     #[ORM\Column(type: 'json')]
+    #[Groups(['user:read'])]
     private array $roles = [];
 
     #[ORM\Column(type: 'string')]
+    #[Groups(['user:read'])]
     private string $firstName;
 
     #[ORM\Column(type: 'string')]
+    #[Groups(['user:read'])]
     private string $lastName;
 
     #[ORM\Column(type: 'string', enumType: EmploymentType::class)]
+    #[Groups(['user:read'])]
     private EmploymentType $employmentType;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(['user:read'])]
     private bool $active = true;
     
     #[ORM\Column(type: 'date', nullable: true)]
+    #[Groups(['user:read'])]
     private ?\DateTimeInterface $hireDate = null;
     
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'manager_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['user:read'])]
     private ?User $manager = null;
     
     #[ORM\OneToMany(mappedBy: 'manager', targetEntity: User::class)]
+    #[Groups(['user:read'])]
     private iterable $subordinates;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: EmployeeSkillPath::class, orphanRemoval: true, fetch: 'EAGER')]
+    #[Groups(['user:read'])]
+    private Collection $employeeSkillPaths;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: EmployeeSkill::class, orphanRemoval: true, fetch: 'EAGER')]
+    #[Groups(['user:read'])]
+    private Collection $employeeSkills;
 
     public function __construct(
         UserId $id,
@@ -84,6 +107,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->employmentType = $employmentType;
         $this->subordinates = [];
         $this->roles[] = self::ROLE_AGENT;
+        $this->employeeSkillPaths = new ArrayCollection();
+        $this->employeeSkills = new ArrayCollection();
     }
 
     public function getId(): UserId
@@ -268,5 +293,45 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getEmploymentType(): EmploymentType
     {
         return $this->employmentType;
+    }
+
+    public function getEmployeeSkillPaths(): Collection
+    {
+        return $this->employeeSkillPaths;
+    }
+
+    public function addEmployeeSkillPath(EmployeeSkillPath $employeeSkillPath): self
+    {
+        if (!$this->employeeSkillPaths->contains($employeeSkillPath)) {
+            $this->employeeSkillPaths->add($employeeSkillPath);
+            $employeeSkillPath->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeEmployeeSkillPath(EmployeeSkillPath $employeeSkillPath): self
+    {
+        $this->employeeSkillPaths->removeElement($employeeSkillPath);
+        return $this;
+    }
+
+    public function getEmployeeSkills(): Collection
+    {
+        return $this->employeeSkills;
+    }
+
+    public function addEmployeeSkill(EmployeeSkill $employeeSkill): self
+    {
+        if (!$this->employeeSkills->contains($employeeSkill)) {
+            $this->employeeSkills->add($employeeSkill);
+            $employeeSkill->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeEmployeeSkill(EmployeeSkill $employeeSkill): self
+    {
+        $this->employeeSkills->removeElement($employeeSkill);
+        return $this;
     }
 } 

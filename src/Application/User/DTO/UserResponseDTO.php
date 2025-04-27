@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Application\User\DTO;
 
 use App\Domain\User\Entity\User;
-
 final class UserResponseDTO
 {
     private string $id;
@@ -18,6 +17,7 @@ final class UserResponseDTO
     private ?string $hireDate;
     private ?array $manager;
     private string $employmentType;
+    private array $skills;
 
     public function __construct(
         string $id,
@@ -29,7 +29,8 @@ final class UserResponseDTO
         bool $active,
         ?string $hireDate,
         ?array $manager,
-        string $employmentType
+        string $employmentType,
+        array $skills
     ) {
         $this->id = $id;
         $this->email = $email;
@@ -41,6 +42,7 @@ final class UserResponseDTO
         $this->hireDate = $hireDate;
         $this->manager = $manager;
         $this->employmentType = $employmentType;
+        $this->skills = $skills;
     }
 
     public static function fromEntity(User $user): self
@@ -56,6 +58,44 @@ final class UserResponseDTO
         }
         
         $hireDate = $user->getHireDate() ? $user->getHireDate()->format('Y-m-d') : null;
+
+        // Create a map of skill paths
+        $skillPaths = [];
+        foreach ($user->getEmployeeSkillPaths() as $employeeSkillPath) {
+            $skillPath = $employeeSkillPath->getSkillPath();
+            $skillPaths[$skillPath->getId()] = [
+                'id' => $skillPath->getId(),
+                'name' => $skillPath->getName(),
+                'skills' => []
+            ];
+        }
+
+        // Map skills to their paths
+        foreach ($user->getEmployeeSkills() as $employeeSkill) {
+            $skill = $employeeSkill->getSkill();
+            $skillPathId = $skill->getSkillPath()->getId();
+            
+            if (isset($skillPaths[$skillPathId])) {
+                $skillPaths[$skillPathId]['skills'][] = [
+                    'id' => $skill->getId(),
+                    'name' => $skill->getName(),
+                    'level' => $employeeSkill->getLevel()
+                ];
+            }
+        }
+
+        // Sort skills within each path by name
+        foreach ($skillPaths as &$skillPath) {
+            usort($skillPath['skills'], function($a, $b) {
+                return strcmp($a['name'], $b['name']);
+            });
+        }
+
+        // Convert to array and sort by path name
+        $skillPaths = array_values($skillPaths);
+        usort($skillPaths, function($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
         
         return new self(
             $user->getId()->toString(),
@@ -67,7 +107,8 @@ final class UserResponseDTO
             $user->isActive(),
             $hireDate,
             $managerData,
-            $user->getEmploymentType()->value
+            $user->getEmploymentType()->value,
+            $skillPaths
         );
     }
 
@@ -121,6 +162,11 @@ final class UserResponseDTO
         return $this->employmentType;
     }
 
+    public function getSkills(): array
+    {
+        return $this->skills;
+    }
+
     public function toArray(): array
     {
         return [
@@ -134,6 +180,7 @@ final class UserResponseDTO
             'hireDate' => $this->hireDate,
             'manager' => $this->manager,
             'employmentType' => $this->employmentType,
+            'skills' => $this->skills
         ];
     }
 } 

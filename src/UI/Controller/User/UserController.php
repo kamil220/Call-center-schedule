@@ -231,6 +231,7 @@ class UserController extends AbstractController
                 new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'active', type: 'boolean'),
                 new OA\Property(property: 'hireDate', type: 'string', format: 'date', nullable: true),
+                new OA\Property(property: 'employmentType', type: 'string'),
                 new OA\Property(
                     property: 'manager', 
                     type: 'object', 
@@ -240,6 +241,27 @@ class UserController extends AbstractController
                         new OA\Property(property: 'fullName', type: 'string'),
                         new OA\Property(property: 'email', type: 'string')
                     ]
+                ),
+                new OA\Property(
+                    property: 'skills',
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer'),
+                            new OA\Property(property: 'name', type: 'string'),
+                            new OA\Property(
+                                property: 'skills',
+                                type: 'array',
+                                items: new OA\Items(
+                                    properties: [
+                                        new OA\Property(property: 'id', type: 'integer'),
+                                        new OA\Property(property: 'name', type: 'string'),
+                                        new OA\Property(property: 'level', type: 'integer')
+                                    ]
+                                )
+                            )
+                        ]
+                    )
                 )
             ]
         )
