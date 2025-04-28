@@ -89,21 +89,11 @@ services:
         tags: ['app.leave_type_strategy']
 
     # Leave Type Strategy Factory
-    app.leave_type_strategies:
-        class: Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument
-        arguments: ['app.leave_type_strategy']
+    App\Domain\WorkSchedule\Service\LeaveType\LeaveTypeStrategyFactory: ~
 
-    app.availability_strategies:
-        class: Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument
-        arguments: ['app.availability_strategy']
-
-    App\Domain\WorkSchedule\Service\LeaveType\LeaveTypeStrategyFactory:
-        arguments:
-            $strategies: '@app.leave_type_strategies'
-
+    # Availability Controller
     App\Controller\Api\WorkSchedule\AvailabilityController:
         arguments:
-            $availabilityStrategies: '@app.availability_strategies'
             $availabilityRepository: '@App\Domain\WorkSchedule\Repository\AvailabilityRepositoryInterface'
             $validator: '@validator'
             $userRepository: '@App\Domain\User\Repository\UserRepositoryInterface'
