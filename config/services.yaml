@@ -126,5 +126,26 @@ services:
     App\Domain\Employee\Repository\SkillPathRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\SkillPathRepository
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # Forecast service and strategies
+    App\Domain\Forecast\Service\ForecastService:
+        public: true
+        calls:
+            - method: addStrategy
+              arguments:
+                  - '@App\Domain\Forecast\Strategy\HistoricalAnalysisStrategy'
+
+    App\Domain\Forecast\Strategy\HistoricalAnalysisStrategy:
+        arguments:
+            $historicalDays: 90
+            $peakLoadFactor: 1.2
+        tags: ['app.forecast_strategy']
+
+    App\Controller\Api\WorkSchedule\ForecastController:
+        arguments:
+            $forecastService: '@App\Domain\Forecast\Service\ForecastService'
+        tags: ['controller.service_arguments']
+
+    # Strategy compiler pass
+    App\Infrastructure\DependencyInjection\Compiler\ForecastStrategyPass:
+        tags:
+            - { name: 'kernel.compiler_pass' }
