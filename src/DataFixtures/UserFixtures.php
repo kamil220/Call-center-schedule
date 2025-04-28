@@ -94,9 +94,23 @@ class UserFixtures extends Fixture
             EmploymentType::CONTRACTOR
         ];
         
-        $numberOfAgents = 10;
-        $names = ['John', 'Jane', 'Jim', 'Jill', 'Jack', 'Jill', 'Jack', 'Jill', 'Jack', 'Jill'];
-        $lastNames = ['Doe', 'Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore'];
+        $numberOfAgents = 30;
+        $names = [
+            'John', 'Jane', 'Jim', 'Jill', 'Jack',
+            'Michael', 'Sarah', 'David', 'Emma', 'Daniel',
+            'Sophie', 'Thomas', 'Anna', 'James', 'Laura',
+            'Robert', 'Emily', 'William', 'Olivia', 'Alexander',
+            'Christopher', 'Victoria', 'Matthew', 'Isabella', 'Andrew',
+            'Charlotte', 'Benjamin', 'Sofia', 'Lucas', 'Natalie'
+        ];
+        $lastNames = [
+            'Doe', 'Smith', 'Johnson', 'Williams', 'Jones',
+            'Brown', 'Davis', 'Miller', 'Wilson', 'Moore',
+            'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White',
+            'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez',
+            'Robinson', 'Clark', 'Rodriguez', 'Lewis', 'Lee',
+            'Walker', 'Hall', 'Allen', 'Young', 'Hernandez'
+        ];
         
         for ($i = 0; $i < $numberOfAgents; $i++) {
             $user = new User(

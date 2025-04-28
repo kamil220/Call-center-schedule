@@ -18,10 +18,10 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 
 class CallHistoryFixtures extends Fixture implements DependentFixtureInterface
 {
-    private const START_DATE = '2025-03-01';
+    private const START_DATE = '2025-02-01';
     private const END_DATE = '2025-04-27';
     private const WORK_START_HOUR = 6;
-    private const WORK_END_HOUR = 23;
+    private const WORK_END_HOUR = 21;
     private const MIN_DURATION = 40; // seconds
     private const MAX_DURATION = 1800; // 30 minutes in seconds
     private const WORK_HOURS_PER_DAY = 8;
@@ -229,7 +229,7 @@ class CallHistoryFixtures extends Fixture implements DependentFixtureInterface
 
     private function generatePhoneNumber(): string
     {
-        $prefixes = ['48', '44', '33', '31'];
+        $prefixes = ['48'];
         $prefix = $prefixes[array_rand($prefixes)];
         $number = '';
         for ($i = 0; $i < 9; $i++) {
