@@ -68,12 +68,7 @@ src/
 
 ## API Documentation
 
-The API endpoints are organized by domain and follow REST principles. Main endpoints include:
-
-- `/api/employees` - Employee management
-- `/api/schedules` - Schedule management
-- `/api/calls` - Call history
-- `/api/leave-requests` - Leave request management
+The API endpoints are organized by domain and follow REST principles.
 
 Detailed API documentation is available through Swagger UI at:
 ```
@@ -102,3 +97,11 @@ docker compose exec app vendor/bin/phpcs
 The application is configured with a 2GB memory limit for PHP processes. 
 This high limit is specifically set to handle the generation of large amounts of demo data through fixtures.
 For production environments, it is recommended to reduce this limit to 256MB-512MB, which can be adjusted in the Dockerfile.
+
+## Helpfull commands
+
+### Restore demo data
+docker-compose exec -it app php bin/console doctrine:database:drop --force && 
+docker-compose exec -it app php bin/console doctrine:database:create && 
+docker-compose exec -it app php bin/console doctrine:migrations:migrate --no-interaction && 
+docker-compose exec -it app php bin/console doctrine:fixtures:load --append
