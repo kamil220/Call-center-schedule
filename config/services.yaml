@@ -139,3 +139,11 @@ services:
     App\Infrastructure\DependencyInjection\Compiler\ForecastStrategyPass:
         tags:
             - { name: 'kernel.compiler_pass' }
+
+    # add your services here
+    App\Domain\WorkSchedule\Service\WorkScheduleService:
+        arguments:
+            $workScheduleRepository: '@App\Infrastructure\Persistence\Doctrine\Repository\WorkScheduleRepository'
+
+    App\Infrastructure\Persistence\Doctrine\Repository\WorkScheduleRepository:
+        tags: ['doctrine.repository_service']

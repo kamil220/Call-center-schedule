@@ -334,4 +334,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->employeeSkills->removeElement($employeeSkill);
         return $this;
     }
+
+    public function hasSkillPath(EmployeeSkillPath $skillPath): bool
+    {
+        return $this->employeeSkillPaths->exists(
+            fn(int $key, EmployeeSkillPath $employeeSkillPath) => $employeeSkillPath->getSkillPath() === $skillPath->getSkillPath()
+        );
+    }
 } 
