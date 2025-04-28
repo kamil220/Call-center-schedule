@@ -11,6 +11,9 @@ RUN docker-php-ext-install \
     zip \
     intl
 
+# Configure PHP
+RUN echo "memory_limit = 2G" > /usr/local/etc/php/conf.d/memory-limit.ini
+
 WORKDIR /var/www
 
 # Instalacja Composer
