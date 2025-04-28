@@ -123,5 +123,8 @@ services:
     App\Domain\Employee\Repository\SkillRepositoryInterface:
         class: App\Infrastructure\Persistence\Doctrine\Repository\SkillRepository
 
+    App\Domain\Employee\Repository\SkillPathRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\SkillPathRepository
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
