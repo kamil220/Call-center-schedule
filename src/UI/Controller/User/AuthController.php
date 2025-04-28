@@ -13,8 +13,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use OpenApi\Attributes as OA;
+use Nelmio\ApiDocBundle\Annotation\Model;
 
 #[Route('/api/auth', name: 'api_auth_')]
+#[OA\Tag(name: 'Authentication')]
 class AuthController extends AbstractController
 {
     private UserService $userService;
@@ -38,6 +41,41 @@ class AuthController extends AbstractController
      * CustomAuthenticationSuccessHandler.
      */
     #[Route('/login', name: 'login', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/auth/login',
+        summary: 'Login to get JWT token',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'password'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', example: 'admin@example.com'),
+                    new OA\Property(property: 'password', type: 'string', example: 'admin123')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Returns JWT token and user data',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'token', type: 'string'),
+                        new OA\Property(property: 'user', properties: [
+                            new OA\Property(property: 'id', type: 'string'),
+                            new OA\Property(property: 'email', type: 'string'),
+                            new OA\Property(property: 'firstName', type: 'string'),
+                            new OA\Property(property: 'lastName', type: 'string'),
+                            new OA\Property(property: 'fullName', type: 'string'),
+                            new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'active', type: 'boolean')
+                        ], type: 'object')
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Invalid credentials')
+        ]
+    )]
     public function login(Request $request): JsonResponse
     {
         // This route is handled by the Symfony Security system
@@ -71,6 +109,29 @@ class AuthController extends AbstractController
     }
 
     #[Route('/me', name: 'me', methods: ['GET'])]
+    #[OA\Get(
+        path: '/api/auth/me',
+        summary: 'Get current user information',
+        security: [['Bearer' => []]],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Returns current user data',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'id', type: 'string'),
+                        new OA\Property(property: 'email', type: 'string'),
+                        new OA\Property(property: 'firstName', type: 'string'),
+                        new OA\Property(property: 'lastName', type: 'string'),
+                        new OA\Property(property: 'fullName', type: 'string'),
+                        new OA\Property(property: 'roles', type: 'array', items: new OA\Items(type: 'string')),
+                        new OA\Property(property: 'active', type: 'boolean')
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Not authenticated')
+        ]
+    )]
     public function me(): JsonResponse
     {
         $user = $this->getUser();
@@ -91,6 +152,34 @@ class AuthController extends AbstractController
     }
 
     #[Route('/password-change', name: 'password_change', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/auth/password-change',
+        summary: 'Change user password',
+        security: [['Bearer' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['currentPassword', 'newPassword'],
+                properties: [
+                    new OA\Property(property: 'currentPassword', type: 'string'),
+                    new OA\Property(property: 'newPassword', type: 'string')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Password changed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'Password changed successfully')
+                    ]
+                )
+            ),
+            new OA\Response(response: 400, description: 'Invalid request data'),
+            new OA\Response(response: 401, description: 'Not authenticated')
+        ]
+    )]
     public function changePassword(Request $request): JsonResponse
     {
         $user = $this->getUser();
