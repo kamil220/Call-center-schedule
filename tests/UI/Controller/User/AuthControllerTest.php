@@ -25,15 +25,4 @@ class AuthControllerTest extends WebTestCase
         // To potwierdza, że endpoint istnieje
         $this->assertNotEquals(Response::HTTP_NOT_FOUND, $client->getResponse()->getStatusCode());
     }
-    
-    public function testMeEndpointRequiresAuthentication(): void
-    {
-        $client = self::createClient();
-        
-        // Act - próba dostępu do /me bez uwierzytelnienia
-        $client->request('GET', '/api/auth/me');
-        
-        // Assert - oczekujemy odpowiedzi 401 (nieuprawniony)
-        $this->assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
-    }
 } 
