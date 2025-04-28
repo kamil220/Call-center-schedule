@@ -23,7 +23,7 @@ class Skill
     #[Groups(['user:read'])]
     private string $name;
 
-    #[ORM\ManyToOne(targetEntity: SkillPath::class, inversedBy: 'skills', fetch: 'EAGER')]
+    #[ORM\ManyToOne(targetEntity: SkillPath::class, cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['user:read'])]
     private SkillPath $skillPath;

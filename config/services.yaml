@@ -34,7 +34,7 @@ services:
 
     # Domain repositories (interfaces)
     App\Domain\User\Repository\UserRepositoryInterface:
-        class: App\Infrastructure\User\Repository\DoctrineUserRepository
+        class: App\Infrastructure\Persistence\Doctrine\Repository\UserRepository
 
     # Authentication Success Handler - registered directly in security.yaml
     App\Infrastructure\Security\Authentication\CustomAuthenticationSuccessHandler:
@@ -89,13 +89,21 @@ services:
         tags: ['app.leave_type_strategy']
 
     # Leave Type Strategy Factory
+    app.leave_type_strategies:
+        class: Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument
+        arguments: ['app.leave_type_strategy']
+
+    app.availability_strategies:
+        class: Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument
+        arguments: ['app.availability_strategy']
+
     App\Domain\WorkSchedule\Service\LeaveType\LeaveTypeStrategyFactory:
         arguments:
-            $strategies: !tagged_iterator app.leave_type_strategy
+            $strategies: '@app.leave_type_strategies'
 
     App\Controller\Api\WorkSchedule\AvailabilityController:
         arguments:
-            $availabilityStrategies: !tagged_iterator app.availability_strategy
+            $availabilityStrategies: '@app.availability_strategies'
             $availabilityRepository: '@App\Domain\WorkSchedule\Repository\AvailabilityRepositoryInterface'
             $validator: '@validator'
             $userRepository: '@App\Domain\User\Repository\UserRepositoryInterface'
@@ -107,6 +115,13 @@ services:
             $validator: '@validator'
             $userRepository: '@App\Domain\User\Repository\UserRepositoryInterface'
             $leaveTypeStrategyFactory: '@App\Domain\WorkSchedule\Service\LeaveType\LeaveTypeStrategyFactory'
+
+    # Explicitly register repositories
+    App\Domain\Call\Repository\CallRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\CallRepository
+
+    App\Domain\Employee\Repository\SkillRepositoryInterface:
+        class: App\Infrastructure\Persistence\Doctrine\Repository\SkillRepository
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

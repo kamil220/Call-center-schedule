@@ -15,96 +15,84 @@ use Doctrine\Persistence\ObjectManager;
 
 class SkillSystemFixtures extends Fixture implements DependentFixtureInterface
 {
+    public const CUSTOMER_SERVICE_PATH_REFERENCE = 'skill-path-customer-service';
+    public const SALES_PATH_REFERENCE = 'skill-path-sales';
+    public const TECHNICAL_PATH_REFERENCE = 'skill-path-technical';
+    public const ADMINISTRATION_PATH_REFERENCE = 'skill-path-administration';
+
     public function load(ObjectManager $manager): void
     {
-        // Create Skill Paths
-        $customerServicePath = new SkillPath('Customer Service');
-        $salesPath = new SkillPath('Sales');
-        $technicalPath = new SkillPath('Technical');
-        $administrationPath = new SkillPath('Administration');
+        $skillPathRepository = $manager->getRepository(SkillPath::class);
+        $skillRepository = $manager->getRepository(Skill::class);
+
+        // Create skill paths if they don't exist
+        $customerServicePath = $skillPathRepository->findOneBy(['name' => 'Customer Service']) 
+            ?? new SkillPath('Customer Service');
+        $salesPath = $skillPathRepository->findOneBy(['name' => 'Sales']) 
+            ?? new SkillPath('Sales');
+        $technicalPath = $skillPathRepository->findOneBy(['name' => 'Technical']) 
+            ?? new SkillPath('Technical');
+        $administrationPath = $skillPathRepository->findOneBy(['name' => 'Administration']) 
+            ?? new SkillPath('Administration');
 
         $manager->persist($customerServicePath);
         $manager->persist($salesPath);
         $manager->persist($technicalPath);
         $manager->persist($administrationPath);
 
-        // Create Skills for Customer Service
-        $basicCustomerService = new Skill('Basic Customer Service', $customerServicePath);
-        $complaintResolution = new Skill('Complaint Resolution', $customerServicePath);
-        $phoneSupport = new Skill('Phone Support', $customerServicePath);
+        $this->addReference(self::CUSTOMER_SERVICE_PATH_REFERENCE, $customerServicePath);
+        $this->addReference(self::SALES_PATH_REFERENCE, $salesPath);
+        $this->addReference(self::TECHNICAL_PATH_REFERENCE, $technicalPath);
+        $this->addReference(self::ADMINISTRATION_PATH_REFERENCE, $administrationPath);
 
-        $manager->persist($basicCustomerService);
-        $manager->persist($complaintResolution);
-        $manager->persist($phoneSupport);
+        // Create skills
+        $skillsData = [
+            // Customer Service skills
+            ['name' => 'Phone Support', 'path' => $customerServicePath],
+            ['name' => 'Email Support', 'path' => $customerServicePath],
+            ['name' => 'Chat Support', 'path' => $customerServicePath],
+            
+            // Sales skills
+            ['name' => 'Product Knowledge', 'path' => $salesPath],
+            ['name' => 'Negotiation', 'path' => $salesPath],
+            ['name' => 'Lead Generation', 'path' => $salesPath],
+            
+            // Technical skills
+            ['name' => 'Hardware Support', 'path' => $technicalPath],
+            ['name' => 'Software Support', 'path' => $technicalPath],
+            ['name' => 'Network Support', 'path' => $technicalPath],
+            
+            // Administration skills
+            ['name' => 'Documentation', 'path' => $administrationPath],
+            ['name' => 'Quality Assurance', 'path' => $administrationPath],
+            ['name' => 'Team Management', 'path' => $administrationPath],
+        ];
 
-        // Create Skills for Sales
-        $medicalProductsSales = new Skill('Medical Products Sales', $salesPath);
-        $leadGeneration = new Skill('Lead Generation', $salesPath);
-        $contractNegotiation = new Skill('Contract Negotiation', $salesPath);
+        $skills = [];
+        foreach ($skillsData as $skillData) {
+            $skill = $skillRepository->findOneBy(['name' => $skillData['name']]) 
+                ?? new Skill($skillData['name'], $skillData['path']);
+            $manager->persist($skill);
+            $skills[] = $skill;
+        }
 
-        $manager->persist($medicalProductsSales);
-        $manager->persist($leadGeneration);
-        $manager->persist($contractNegotiation);
-
-        // Create Skills for Technical
-        $crmSystems = new Skill('CRM Systems', $technicalPath);
-        $technicalDocumentation = new Skill('Technical Documentation', $technicalPath);
-        $dataAnalysis = new Skill('Data Analysis', $technicalPath);
-
-        $manager->persist($crmSystems);
-        $manager->persist($technicalDocumentation);
-        $manager->persist($dataAnalysis);
-
-        // Create Skills for Administration
-        $projectManagement = new Skill('Project Management', $administrationPath);
-        $teamCoordination = new Skill('Team Coordination', $administrationPath);
-
-        $manager->persist($projectManagement);
-        $manager->persist($teamCoordination);
-
-        // Assign skills to existing agents
+        // Assign skills to agents
         for ($i = 0; $i < 10; $i++) {
             /** @var User $agent */
             $agent = $this->getReference(sprintf('%s-%d', UserFixtures::AGENT_USER_REFERENCE, $i), User::class);
-
-            // Assign random skill paths to agent
-            $skillPaths = [$customerServicePath];
-            if ($i % 2 === 0) {
-                $skillPaths[] = $salesPath;
+            
+            // Assign Customer Service skills to all agents
+            foreach (range(0, 2) as $skillIndex) {
+                $employeeSkill = new EmployeeSkill($agent, $skills[$skillIndex], random_int(1, 5));
+                $manager->persist($employeeSkill);
             }
-            if ($i % 3 === 0) {
-                $skillPaths[] = $technicalPath;
-            }
-            if ($i % 4 === 0) {
-                $skillPaths[] = $administrationPath;
-            }
-
-            foreach ($skillPaths as $skillPath) {
-                $manager->persist(new EmployeeSkillPath($agent, $skillPath));
-            }
-
-            // Assign skills with levels based on skill paths
-            if (in_array($customerServicePath, $skillPaths)) {
-                $manager->persist(new EmployeeSkill($agent, $basicCustomerService, random_int(3, 5)));
-                $manager->persist(new EmployeeSkill($agent, $complaintResolution, random_int(2, 5)));
-                $manager->persist(new EmployeeSkill($agent, $phoneSupport, random_int(3, 5)));
-            }
-
-            if (in_array($salesPath, $skillPaths)) {
-                $manager->persist(new EmployeeSkill($agent, $medicalProductsSales, random_int(2, 5)));
-                $manager->persist(new EmployeeSkill($agent, $leadGeneration, random_int(2, 4)));
-                $manager->persist(new EmployeeSkill($agent, $contractNegotiation, random_int(1, 4)));
-            }
-
-            if (in_array($technicalPath, $skillPaths)) {
-                $manager->persist(new EmployeeSkill($agent, $crmSystems, random_int(2, 5)));
-                $manager->persist(new EmployeeSkill($agent, $technicalDocumentation, random_int(2, 4)));
-                $manager->persist(new EmployeeSkill($agent, $dataAnalysis, random_int(1, 4)));
-            }
-
-            if (in_array($administrationPath, $skillPaths)) {
-                $manager->persist(new EmployeeSkill($agent, $projectManagement, random_int(2, 4)));
-                $manager->persist(new EmployeeSkill($agent, $teamCoordination, random_int(2, 5)));
+            
+            // Randomly assign other skills
+            foreach (range(3, count($skills) - 1) as $skillIndex) {
+                if (random_int(0, 1)) {
+                    $employeeSkill = new EmployeeSkill($agent, $skills[$skillIndex], random_int(1, 5));
+                    $manager->persist($employeeSkill);
+                }
             }
         }
 
