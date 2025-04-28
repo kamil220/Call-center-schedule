@@ -10,6 +10,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'employee_skills_assignments')]
+#[ORM\UniqueConstraint(name: 'UNIQ_user_skill', columns: ['user_id', 'skill_id'])]
 class EmployeeSkill
 {
     public const MIN_LEVEL = 1;
@@ -21,13 +22,13 @@ class EmployeeSkill
     #[Groups(['user:read'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, fetch: 'EAGER')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'employeeSkills', fetch: 'EAGER')]
+    #[ORM\JoinColumn(name: 'user_id', nullable: false)]
     #[Groups(['user:read'])]
     private User $user;
 
     #[ORM\ManyToOne(targetEntity: Skill::class, inversedBy: 'employeeSkills', fetch: 'EAGER')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'skill_id', nullable: false)]
     #[Groups(['user:read'])]
     private Skill $skill;
 
@@ -66,20 +67,6 @@ class EmployeeSkill
     public function setSkill(Skill $skill): self
     {
         $this->skill = $skill;
-        
-        // Automatically create EmployeeSkillPath if it doesn't exist
-        $skillPath = $skill->getSkillPath();
-        $userSkillPaths = $this->user->getEmployeeSkillPaths();
-        
-        $hasSkillPath = $userSkillPaths->exists(function($key, $employeeSkillPath) use ($skillPath) {
-            return $employeeSkillPath->getSkillPath()->getId() === $skillPath->getId();
-        });
-        
-        if (!$hasSkillPath) {
-            $employeeSkillPath = new EmployeeSkillPath($this->user, $skillPath);
-            $this->user->addEmployeeSkillPath($employeeSkillPath);
-        }
-        
         return $this;
     }
 

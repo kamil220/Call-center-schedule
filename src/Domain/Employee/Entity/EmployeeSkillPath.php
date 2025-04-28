@@ -10,6 +10,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'employee_skill_paths_assignments')]
+#[ORM\UniqueConstraint(name: 'UNIQ_user_skill_path', columns: ['user_id', 'skill_path_id'])]
 class EmployeeSkillPath
 {
     #[ORM\Id]
@@ -18,13 +19,13 @@ class EmployeeSkillPath
     #[Groups(['user:read'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, fetch: 'EAGER')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'employeeSkillPaths', fetch: 'EAGER')]
+    #[ORM\JoinColumn(name: 'user_id', nullable: false)]
     #[Groups(['user:read'])]
     private User $user;
 
     #[ORM\ManyToOne(targetEntity: SkillPath::class, inversedBy: 'employeeSkillPaths', fetch: 'EAGER')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'skill_path_id', nullable: false)]
     #[Groups(['user:read'])]
     private SkillPath $skillPath;
 

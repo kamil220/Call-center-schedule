@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\DataFixtures;
 
 use App\Domain\Employee\Entity\EmployeeSkill;
-use App\Domain\Employee\Entity\EmployeeSkillPath;
 use App\Domain\Employee\Entity\Skill;
 use App\Domain\Employee\Entity\SkillPath;
+use App\Domain\Employee\Entity\EmployeeSkillPath;
 use App\Domain\User\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -83,24 +83,47 @@ class SkillSystemFixtures extends Fixture implements DependentFixtureInterface
         }
 
         // Assign skills to agents
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 30; $i++) {
             /** @var User $agent */
             $agent = $this->getReference(sprintf('%s-%d', UserFixtures::AGENT_USER_REFERENCE, $i), User::class);
             
-            // Ensure each agent has at least 3 random skills
-            $shuffledSkills = $skills;
-            shuffle($shuffledSkills);
-            
-            // Assign minimum 3 random skills
-            for ($j = 0; $j < 3; $j++) {
-                $employeeSkill = new EmployeeSkill($agent, $shuffledSkills[$j], random_int(1, 5));
-                $manager->persist($employeeSkill);
+            // Group skills by path
+            $skillsByPath = [];
+            $pathObjects = [];
+            foreach ($skills as $skill) {
+                $skillPath = $skill->getSkillPath();
+                $pathName = $skillPath->getName();
+                if (!isset($skillsByPath[$pathName])) {
+                    $skillsByPath[$pathName] = [];
+                    $pathObjects[$pathName] = $skillPath;
+                }
+                $skillsByPath[$pathName][] = $skill;
             }
             
-            // Randomly assign additional skills
-            for ($j = 3; $j < count($shuffledSkills); $j++) {
-                if (random_int(0, 1)) {
-                    $employeeSkill = new EmployeeSkill($agent, $shuffledSkills[$j], random_int(1, 5));
+            // Select random number of paths (1-3)
+            $paths = array_keys($skillsByPath);
+            shuffle($paths);
+            $numPaths = random_int(1, 3);
+            $selectedPaths = array_slice($paths, 0, $numPaths);
+            
+            // First create EmployeeSkillPath for each selected path
+            foreach ($selectedPaths as $pathName) {
+                $skillPath = $pathObjects[$pathName];
+                $employeeSkillPath = new EmployeeSkillPath($agent, $skillPath);
+                $manager->persist($employeeSkillPath);
+            }
+            
+            // Now assign skills for each path
+            foreach ($selectedPaths as $pathName) {
+                $pathSkills = $skillsByPath[$pathName];
+                shuffle($pathSkills);
+                
+                // Assign 1-2 skills from this path
+                $numSkills = random_int(1, min(2, count($pathSkills)));
+                for ($j = 0; $j < $numSkills; $j++) {
+                    $skill = $pathSkills[$j];
+                    $employeeSkill = new EmployeeSkill($agent, $skill, random_int(1, 5));
+                    $agent->addEmployeeSkill($employeeSkill);
                     $manager->persist($employeeSkill);
                 }
             }
