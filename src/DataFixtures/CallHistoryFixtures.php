@@ -24,10 +24,16 @@ class CallHistoryFixtures extends Fixture implements DependentFixtureInterface
     private const WORK_END_HOUR = 23;
     private const MIN_DURATION = 40; // seconds
     private const MAX_DURATION = 1800; // 30 minutes in seconds
-    private const TARGET_WORKLOAD_MIN = 0.6; // 60%
-    private const TARGET_WORKLOAD_MAX = 1.0; // 100%
     private const WORK_HOURS_PER_DAY = 8;
     private const BATCH_SIZE = 5;
+
+    // Define skill path weights (probability of calls for each path)
+    private const SKILL_PATH_WEIGHTS = [
+        SkillSystemFixtures::CUSTOMER_SERVICE_PATH_REFERENCE => 40,  // 40% calls
+        SkillSystemFixtures::SALES_PATH_REFERENCE => 30,            // 30% calls
+        SkillSystemFixtures::TECHNICAL_PATH_REFERENCE => 20,        // 20% calls
+        SkillSystemFixtures::ADMINISTRATION_PATH_REFERENCE => 10    // 10% calls
+    ];
 
     public function load(ObjectManager $manager): void
     {
@@ -39,12 +45,15 @@ class CallHistoryFixtures extends Fixture implements DependentFixtureInterface
         $operators = $this->getOperators();
         $output->writeln(sprintf('Found %d operators', count($operators)));
         
-        $output->writeln('Loading lines...');
-        $lines = $this->getLines($em);
-        if (empty($lines)) {
-            throw new \RuntimeException('No phone lines found in Customer Service skill path');
+        $output->writeln('Loading lines for all skill paths...');
+        $linesByPath = $this->getLinesByPath($em);
+        if (empty($linesByPath)) {
+            throw new \RuntimeException('No phone lines found');
         }
-        $output->writeln(sprintf('Found %d lines', count($lines)));
+        
+        foreach ($linesByPath as $pathRef => $lines) {
+            $output->writeln(sprintf('Found %d lines for path %s', count($lines), $pathRef));
+        }
 
         $startDate = new DateTime(self::START_DATE);
         $endDate = new DateTime(self::END_DATE);
@@ -107,9 +116,17 @@ class CallHistoryFixtures extends Fixture implements DependentFixtureInterface
                         break;
                     }
 
+                    // Select skill path based on weights
+                    $selectedPath = $this->selectSkillPathByWeight();
+                    $availableLines = $linesByPath[$selectedPath] ?? [];
+                    
+                    if (empty($availableLines)) {
+                        continue;
+                    }
+
                     $call = new Call(
                         clone $lastEndTime,
-                        $lines[array_rand($lines)],
+                        $availableLines[array_rand($availableLines)],
                         $this->generatePhoneNumber(),
                         $this->getReference($operatorReference, User::class),
                         $duration
@@ -136,7 +153,7 @@ class CallHistoryFixtures extends Fixture implements DependentFixtureInterface
                         
                         // Reload references after clearing
                         $operators = $this->getOperators();
-                        $lines = $this->getLines($em);
+                        $linesByPath = $this->getLinesByPath($em);
                         $operator = $this->getReference(sprintf('%s-%d', UserFixtures::AGENT_USER_REFERENCE, $operatorIndex), User::class);
                         
                         $batchCount = 0;
@@ -173,16 +190,41 @@ class CallHistoryFixtures extends Fixture implements DependentFixtureInterface
         return $operators;
     }
 
-    private function getLines(EntityManagerInterface $em): array
+    private function getLinesByPath(EntityManagerInterface $em): array
     {
-        $skillPath = $this->getReference(SkillSystemFixtures::CUSTOMER_SERVICE_PATH_REFERENCE, SkillPath::class);
-        $lines = $em->getRepository(Skill::class)->findBy(['skillPath' => $skillPath]);
+        $linesByPath = [];
         
-        if (empty($lines)) {
-            throw new \RuntimeException('No skills found for Customer Service skill path');
+        foreach (self::SKILL_PATH_WEIGHTS as $pathReference => $weight) {
+            $skillPath = $this->getReference($pathReference, SkillPath::class);
+            $lines = $em->getRepository(Skill::class)->findBy(['skillPath' => $skillPath]);
+            
+            if (!empty($lines)) {
+                $linesByPath[$pathReference] = $lines;
+            }
         }
         
-        return $lines;
+        if (empty($linesByPath)) {
+            throw new \RuntimeException('No skills found for any skill path');
+        }
+        
+        return $linesByPath;
+    }
+
+    private function selectSkillPathByWeight(): string
+    {
+        $total = array_sum(self::SKILL_PATH_WEIGHTS);
+        $random = rand(1, $total);
+        $current = 0;
+        
+        foreach (self::SKILL_PATH_WEIGHTS as $pathReference => $weight) {
+            $current += $weight;
+            if ($random <= $current) {
+                return $pathReference;
+            }
+        }
+        
+        // Fallback to customer service if something goes wrong
+        return SkillSystemFixtures::CUSTOMER_SERVICE_PATH_REFERENCE;
     }
 
     private function generatePhoneNumber(): string
