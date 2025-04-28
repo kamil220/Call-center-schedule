@@ -19,7 +19,7 @@ class WorkScheduleFixtures extends Fixture implements DependentFixtureInterface
     public function load(ObjectManager $manager): void
     {
         // Generate availability for each agent
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 30; $i++) {
             /** @var User $agent */
             $agent = $this->getReference(sprintf('%s-%d', UserFixtures::AGENT_USER_REFERENCE, $i), User::class);
 
