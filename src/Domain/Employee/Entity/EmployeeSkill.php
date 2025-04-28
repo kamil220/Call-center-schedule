@@ -38,8 +38,8 @@ class EmployeeSkill
     public function __construct(User $user, Skill $skill, int $level)
     {
         $this->user = $user;
-        $this->skill = $skill;
         $this->setLevel($level);
+        $this->setSkill($skill);
     }
 
     public function getId(): ?int
@@ -66,6 +66,20 @@ class EmployeeSkill
     public function setSkill(Skill $skill): self
     {
         $this->skill = $skill;
+        
+        // Automatically create EmployeeSkillPath if it doesn't exist
+        $skillPath = $skill->getSkillPath();
+        $userSkillPaths = $this->user->getEmployeeSkillPaths();
+        
+        $hasSkillPath = $userSkillPaths->exists(function($key, $employeeSkillPath) use ($skillPath) {
+            return $employeeSkillPath->getSkillPath()->getId() === $skillPath->getId();
+        });
+        
+        if (!$hasSkillPath) {
+            $employeeSkillPath = new EmployeeSkillPath($this->user, $skillPath);
+            $this->user->addEmployeeSkillPath($employeeSkillPath);
+        }
+        
         return $this;
     }
 

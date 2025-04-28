@@ -85,11 +85,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read'])]
     private iterable $subordinates;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: EmployeeSkillPath::class, orphanRemoval: true, fetch: 'EAGER')]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: EmployeeSkillPath::class, orphanRemoval: true, fetch: 'EAGER', cascade: ['persist'])]
     #[Groups(['user:read'])]
     private Collection $employeeSkillPaths;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: EmployeeSkill::class, orphanRemoval: true, fetch: 'EAGER')]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: EmployeeSkill::class, orphanRemoval: true, fetch: 'EAGER', cascade: ['persist'])]
     #[Groups(['user:read'])]
     private Collection $employeeSkills;
 
