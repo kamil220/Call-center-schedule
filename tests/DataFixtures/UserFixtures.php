@@ -6,6 +6,7 @@ namespace App\Tests\DataFixtures;
 
 use App\Domain\User\Entity\User;
 use App\Domain\User\ValueObject\UserId;
+use App\Domain\User\ValueObject\EmploymentType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -40,7 +41,8 @@ class UserFixtures extends Fixture
             UserId::generate(),
             'admin@example.com',
             'Admin',
-            'User'
+            'User',
+            EmploymentType::EMPLOYMENT_CONTRACT
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'admin123'));
@@ -56,7 +58,8 @@ class UserFixtures extends Fixture
             UserId::generate(),
             'planner@example.com',
             'Planner',
-            'User'
+            'User',
+            EmploymentType::EMPLOYMENT_CONTRACT
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'planner123'));
@@ -72,7 +75,8 @@ class UserFixtures extends Fixture
             UserId::generate(),
             'manager@example.com',
             'Team',
-            'Manager'
+            'Manager',
+            EmploymentType::EMPLOYMENT_CONTRACT
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'manager123'));
@@ -88,7 +92,8 @@ class UserFixtures extends Fixture
             UserId::generate(),
             'agent@example.com',
             'Call',
-            'Agent'
+            'Agent',
+            EmploymentType::EMPLOYMENT_CONTRACT
         );
         
         $user->setPassword($this->passwordHasher->hashPassword($user, 'agent123'));
